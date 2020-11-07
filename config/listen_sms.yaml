@@ -1,0 +1,373 @@
+# 
+# YAML init file for BXLOGIC web listener
+#
+
+globals:
+  bind_host:                   0.0.0.0
+  port:                        9050
+  debug:                       True
+  logfile:                     bxsvc.log
+  project_directory:           $BXLOGIC_HOME
+  service_module:              bx_services
+  transform_function_module:   bx_transforms
+  decoder_module:              bx_decode            
+
+
+service_objects:
+  postgres:
+    class: PostgreSQLService
+    init_params:
+        - name: host
+          value: $PGSQL_HOST
+
+        - name: port
+          value: 5432
+
+        - name: database
+          value: binary_test
+
+        - name: schema  
+          value: bxlogic
+
+        - name: username
+          value: $PGSQL_DB_USER
+        
+        - name: password
+          value: $PGSQL_PASSWORD
+
+  job_pipeline:
+    class: JobPipelineService
+    init_params:
+        - name: job_bucket_name
+          value: bxlogic.binarymachines.io
+
+        - name: posted_jobs_folder
+          value: posted
+
+        - name: accepted_jobs_folder
+          value: accepted
+
+        - name: bid_window_limit_type
+          value: time_seconds
+
+        - name: bid_window_limit
+          value: 5
+
+  s3:
+    class: S3Service
+    init_params:
+      - name: region
+        value: us-east-1
+
+      - name: auth_via_iam
+        value: False
+
+      - name: local_temp_path
+        value: /tmp
+
+      - name: aws_key_id
+        value: $AWS_ACCESS_KEY_ID
+
+      - name: aws_secret_key
+        value: $AWS_SECRET_ACCESS_KEY
+
+  sms:
+    class: SMSService
+    init_params:
+      - name: account_sid
+        value: $TWILIO_ACCT_SID
+
+      - name: auth_token
+        value: $TWILIO_AUTH_TOKEN
+
+      - name: source_mobile_number
+        value: "9178102234"
+
+data_shapes:
+  default:
+    fields:
+
+  poll_job_status_shape:
+    fields:
+      - name: job_tag
+        datatype: str
+        required: True
+
+  update_job_log_shape:
+    fields:
+      - name: job_tag
+        datatype: str
+        required: True
+
+      - name: message
+        datatype: str
+        required: True
+
+  new_courier_shape:
+    fields:
+      - name: first_name
+        datatype: str
+        required: True
+
+      - name: last_name
+        datatype: str
+        required: True
+
+      - name: mobile_number
+        datatype: str
+        required: True
+      
+      - name: email
+        datatype: str
+        required: True
+
+      - name: boroughs
+        datatype: str
+        required: True
+
+      - name: transport_methods
+        datatype: str
+        required: True
+
+  new_client_shape:
+    fields:
+      - name: first_name
+        datatype: str
+        required: True
+
+      - name: last_name
+        datatype: str
+        required: False
+
+      - name: phone
+        datatype: str
+        required: True
+
+      - name: email
+        datatype: str
+        required: False
+
+  couriers_by_status_shape:
+    fields:
+      - name: status
+        datatype: int
+        required: True
+
+  update_courier_status_shape:
+    fields:
+      - name: id
+        datatype: str
+        required: True
+
+      - name: status
+        datatype: int
+        required: True
+
+  job_bids_shape:
+    fields:
+      - name: job_tag
+        datatype: str
+        required: True
+
+  new_job_shape:
+    fields:
+      - name: client_id
+        datatype: str
+        required: True
+
+      - name: delivery_address
+        datatype: str
+        required: True
+
+      - name: delivery_borough
+        datatype: str
+        required: True
+
+      - name: delivery_zip
+        datatype: str
+        required: True
+
+      - name: delivery_neighborhood
+        datatype: str
+        required: False
+
+      - name: pickup_address
+        datatype: str
+        required: True
+
+      - name: pickup_borough
+        datatype: str
+        required: True
+
+      - name: pickup_neighborhood
+        datatype: str
+        required: False
+
+      - name: pickup_zip
+        datatype: str
+        required: True
+
+      - name: payment_method
+        datatype: str
+        required: True
+
+      - name: items
+        datatype: str
+        required: True
+
+      - name: delivery_window_open
+        datatype: str
+        required: False
+
+      - name: delivery_window_close
+        datatype: str
+        required: False
+
+  open_bidding_shape:
+    fields:
+      - name: job_tag
+        datatype: str
+        required: True
+
+  close_bidding_shape:
+    fields:
+      - name: job_tag
+        datatype: str
+        required: True
+
+  rebroadcast_shape:
+    fields:
+      - name: job_tag
+        datatype: str
+        required: True
+
+  rollover_shape:
+    fields:
+      - name: job_tag
+        datatype: str
+        required: True
+
+  award_job_shape:
+    fields:
+      - name: window_id
+        datatype: str
+        required: True
+
+      - name: bids
+        datatype: list
+        required: True
+
+transforms:
+  ping:
+    route:              /ping
+    method:             GET
+    input_shape:        default
+    output_mimetype:    application/json
+
+  new_courier:
+    route:              /courier
+    method:             POST
+    input_shape:        new_courier_shape
+    output_mimetype:    application/json
+
+  update_courier_status:
+    route:              /courier-status
+    method:             POST
+    input_shape:        update_courier_status_shape
+    output_mimetype:    application/json
+
+  couriers_by_status:
+    route:              /couriers
+    method:             GET
+    input_shape:        couriers_by_status_shape
+    output_mimetype:    application/json
+
+  new_client:
+    route:              /client
+    method:             POST
+    input_shape:        new_client_shape
+    output_mimetype:    application/json
+
+  new_job:
+    route:              /job
+    method:             POST
+    input_shape:        new_job_shape
+    output_mimetype:    application/json
+
+  poll_job_status:
+    route:              /jobstatus
+    method:             GET
+    input_shape:        poll_job_status_shape
+    output_mimetype:    application/json
+
+  update_job_log:
+    route:              /joblog
+    method:             POST
+    input_shape:        update_job_log_shape
+    output_mimetype:    application/json
+
+  sms_responder:
+    route:              /sms
+    method:             POST
+    input_shape:        default
+    output_mimetype:    text/json
+
+  open_bidding:
+    route:              /openbidding
+    method:             POST
+    input_shape:        open_bidding_shape
+    output_mimetype:    application/json
+
+  close_bidding:
+    route:              /closebidding
+    method:             POST
+    input_shape:        close_bidding_shape
+    output_mimetype:    application/json
+
+  active_job_bids:
+    route:              /bids
+    method:             GET
+    input_shape:        job_bids_shape
+    output_mimetype:    application/json
+
+  bidding_policy:
+    route:              /policy
+    method:             GET
+    input_shape:        default
+    output_mimetype:    application/json
+
+  award_job:
+    route:              /award
+    method:             POST
+    input_shape:        award_job_shape
+    output_mimetype:    application/json
+
+  rebroadcast:          # re-send SMS notifications of job availability               
+    route:              /rebroadcast
+    method:             POST
+    input_shape:        rebroadcast_shape
+    output_mimetype:    application/json
+
+  rollover:             # close and reopen bid window for an unclaimed job, keeping current bidders
+    route:              /roll
+    method:             POST
+    input_shape:        rollover_shape
+    output_mimetype:    application/json
+
+  bidding_status:
+    route:              /bidstat
+    method:             GET
+    input_shape:        default
+    output_mimetype:    application/json
+
+
+decoders:
+  application/json; charset=utf-8: decode_json
+
+
+error_handlers:
+        - error:                NoSuchObjectException
+          tx_status_code:       HTTP_NOT_FOUND 
+                
+        - error:                DuplicateIDException
+          tx_status_code:       HTTP_BAD_REQUEST

@@ -1,0 +1,35 @@
+#
+# config file for Pulse SMS dialog engine
+#
+
+
+globals:
+  system_id: 'pulse'
+  network_id: 'fsny'
+
+
+# commands that direct the system to do something OR update the
+# user's status
+system_commands:
+  on:
+    definition: # string describing what the command does
+    tag_required: # boolean
+    synonyms: # array
+
+
+# commands that emit a (full or partial) list of data items
+generator_commands:
+  my:
+    definition: # string
+    specifier: # separator, usually '.'
+    filter_char: # 
+
+#
+prefix_commands:
+  '$':
+    definition: # string
+    defchar: # separator character between the prefix and the command body
+
+
+command_macros:
+    
