@@ -7,6 +7,9 @@ verify_ssl = true
 
 [packages]
 snap-micro = "*"
+sqlalchemy = "*"
+boto3 = "*"
+twilio = "*"
 
 [requires]
 python_version = "3.6"

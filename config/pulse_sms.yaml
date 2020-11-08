@@ -2,34 +2,96 @@
 # config file for Pulse SMS dialog engine
 #
 
-
 globals:
-  system_id: 'pulse'
-  network_id: 'fsny'
+  system_id: pulse
+  network_id: fsny
+  service_module: pulse_sms_services
 
+service_objects:
+  sms:
+    class: SMSService
+    init_params:
+      - name: account_sid
+        value: $TWILIO_ACCT_SID
 
-# commands that direct the system to do something OR update the
-# user's status
+      - name: auth_token
+        value: $TWILIO_AUTH_TOKEN
+
+      - name: source_mobile_number
+        value: "9178102234"
+
+#        
+# Commands that direct the system to do something OR update the user's status
+#
+# (The command names are quoted because the YAML parser reads certain words (such as "on" and "off") incorrectly
+# as booleans.
+#
 system_commands:
-  on:
-    definition: # string describing what the command does
-    tag_required: # boolean
-    synonyms: # array
+  'on':
+    definition: 'User coming on-line' # string describing what the command does
+    arg_required: False # boolean; does the command require an argument?
+    synonyms: []
 
+  'off':
+    definition: 'User going off-line'
+    arg_required: False
+    synonyms: []
+
+  'snd':
+    definition: 'Send message'
+    arg_required: True
+    synonyms: []
+
+  'fwd':
+    definition: 'Forward message'
+    arg_required: True
+    synonyms: []
+  
+  'arc':
+    definition: 'Archive message'
+    arg_required: True 
+    synonyms: []
+
+  'det':
+    definition: 'View message details'
+    arg_required: True
+    synonyms: ['dt']
+
+  'hlp':
+    definition: 'Display help prompts'
+    arg_required: False
+    synonyms: ['?']
 
 # commands that emit a (full or partial) list of data items
 generator_commands:
   my:
-    definition: # string
-    specifier: # separator, usually '.'
-    filter_char: # 
+    definition: 'List my messages' 
+    specifier: '.'    # separator, usually '.'
+    filter_char: '?' 
 
-#
+  msg:
+    definition: 'Display messages from user'
+    specifier: '.'
+    filter_char: '?'
+
+
 prefix_commands:
   '$':
-    definition: # string
-    defchar: # separator character between the prefix and the command body
+    definition: 'Create a user-defined macro'  
+    separator: ':'  # separator character between the prefix and the command body
+
+  '@':
+    definition: 'Send a message to a user via his or her handle'
+    separator: ':'
+
+  '&':
+    definition: 'Create a user handle for yourself'
+    separator: ' '
+
+  '#':
+    definition: 'Look up an abbreviation'
+    separator: ':'
 
 
 command_macros:
-    
+

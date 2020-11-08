@@ -17,6 +17,9 @@ import datetime
 from collections import namedtuple
 from urllib.parse import unquote_plus
 
+from pulse_sms_services import SMSService
+
+from snap import common
 
 SMSCommandSpec = namedtuple('SMSCommandSpec', 'command definition synonyms tag_required')
 SMSGeneratorSpec = namedtuple('SMSGeneratorSpec', 'command definition specifier filterchar')
@@ -102,10 +105,28 @@ def exception_status(err, **kwargs):
 
 class CommandLexicon(object):
     def __init__(self):
+        self.system_commands = {}
+        self.generator_commands = {}
+        self.prefix_commands = {}
+        self.command_macros = {}
+
+    def register_sys_command_spec(self, cmdspec: SMSCommandSpec):
+        self.system_commands[cmdspec.command] = cmdspec
+        
+
+    def register_gen_command_spec(self, cmdspec: SMSGeneratorSpec):
+        self.generator_commands[cmdspec.command] = cmdspec
+
+
+    def register_pfx_command_spec(self, cmdspec: SMSPrefixSpec):
+        self.prefix_commands[cmdspec.command] = cmdspec
+
+    def register_command_macro_spec(self):
         pass
 
+
     def lookup_sms_command(self, cmd_string):
-        for key, cmd_spec in SMS_SYSTEM_COMMAND_SPECS.items():
+        for key, cmd_spec in self.system_commands.items():
             if cmd_string == key:
                 return cmd_spec
             if cmd_string in cmd_spec.synonyms:
@@ -115,7 +136,7 @@ class CommandLexicon(object):
 
 
     def lookup_generator_command(self, cmd_string):
-        for key, cmd_spec in SMS_GENERATOR_COMMAND_SPECS.items():
+        for key, cmd_spec in self.generator_commands.items():
             delimiter = cmd_spec.specifier
             filter_char = cmd_spec.filterchar
 
@@ -130,11 +151,7 @@ class CommandLexicon(object):
         return None
 
     def lookup_macro(self, courier_id, macro_name, session, db_svc):
-        Macro = db_svc.Base.classes.user_macros
-        try:
-            return session.query(Macro).filter(Macro.user_id == courier_id, Macro.name == macro_name).one()
-        except NoResultFound:
-            return None
+        pass
 
 
     def compile_help_string(self):
@@ -142,20 +159,20 @@ class CommandLexicon(object):
 
         lines.append('________')
 
-        lines.append('[ LIST commands ]:')
-        for key, cmd_spec in SMS_GENERATOR_COMMAND_SPECS.items():
+        lines.append('[ SYSTEM commands ]:')
+        for key, cmd_spec in self.system_commands.items():
             lines.append('%s : %s' % (key, cmd_spec.definition))
         
         lines.append('________')
 
-        lines.append('[ GENERAL commands ]:')
-        for key, cmd_spec in SMS_SYSTEM_COMMAND_SPECS.items():
+        lines.append('[ LISTING commands ]:')
+        for key, cmd_spec in self.generator_commands.items():
             lines.append('%s : %s' % (key, cmd_spec.definition))
         
         lines.append('________')
 
         lines.append('[ PREFIX commands ]:')
-        for key, cmd_spec in SMS_PREFIX_COMMAND_SPECS.items():
+        for key, cmd_spec in self.prefix_commands.items():
             lines.append('%s : %s' % (key, cmd_spec.definition))
 
         lines.append('________')
@@ -332,36 +349,80 @@ class DialogEngine(object):
 
 
 class SMSResponder(object):
-    def __init__(self, engine: DialogEngine, lexicon: CommandLexicon, sms_service: SMSService):
-        self.engine = DialogEngine
-        self.lexicon = lexicon
+    def __init__(self, engine: DialogEngine, lexicon: CommandLexicon, sms_service: SMSService, prefix_separator='-'):
+        self.dialog_engine = engine
+        self.parser = SMSMessageParser(lexicon, prefix_separator)
         self.sms_service = sms_service
 
-    def respond(self, source_number, raw_message_body):
+
+    def respond(self, source_number, raw_message_body, service_registry):
         mobile_number = normalize_mobile_number(source_number)
         
         user = self.lookup_user(source_number)
         dlg_context = SMSDialogContext(user=user, source_number=mobile_number, message=unquote_plus(raw_message_body))
 
         try:
-            command_input = parse_sms_message_body(raw_message_body)
+            command_input = self.parser.parse_sms_message_body(raw_message_body)
             print('#----- Resolved command: %s' % str(command_input))
 
-            response = engine.reply_command(command_input, dlg_context, service_objects)
+            response = self.dialog_engine.reply_command(command_input, dlg_context, service_registry)
             self.sms_service.send_sms(mobile_number, response)
 
-         except IncompletePrefixCommand as err:
+        except IncompletePrefixCommand as err:
             print('Error data: %s' % err)
             print('#----- Incomplete prefix command: in message body: %s' % raw_message_body)
-            sms_svc.send_sms(mobile_number, SMS_PREFIX_COMMAND_SPECS[raw_message_body].definition)
-            return core.TransformStatus(ok_status('SMS event received', is_valid_command=False))
+            self.sms_service.send_sms(mobile_number, SMS_PREFIX_COMMAND_SPECS[raw_message_body].definition)
+
+            raise
 
         except UnrecognizedSMSCommand as err:
             print('Error data: %s' % err)
             print('#----- Unrecognized system command: in message body: %s' % raw_message_body)
-            sms_svc.send_sms(mobile_number, compile_help_string())
-            return core.TransformStatus(ok_status('SMS event received', is_valid_command=False))
+            self.sms_service.send_sms(mobile_number, self.lexicon.compile_help_string())
+            
+            raise
         
+
+def load_lexicon(yaml_config: dict) -> CommandLexicon:
+    
+    lexicon = CommandLexicon()
+
+    sys_cmd_segment = yaml_config.get('system_commands')
+    if not sys_cmd_segment:
+        raise Exception('YAML configuration does not contain a required "system_commands" section.')
+
+    for cmd_name, cmd_def in sys_cmd_segment.items():
+        defstring = cmd_def['definition']
+        arg_required = cmd_def['arg_required']
+        synonyms = cmd_def.get('synonyms', [])
+
+        command_spec = SMSCommandSpec(command=cmd_name, definition=defstring, synonyms=synonyms, tag_required=arg_required)
+        lexicon.register_sys_command_spec(command_spec)
+
+    gen_cmd_segment = yaml_config.get('generator_commands')
+    if not gen_cmd_segment:
+        raise Exception('YAML configuration does not contain a required "generator_commands" section.')
+
+    for cmd_name, cmd_def in gen_cmd_segment.items():
+        defstring = cmd_def['definition']
+        specifier = cmd_def['specifier']
+        filter_char = cmd_def['filter_char']
+
+        command_spec = SMSGeneratorSpec(command=cmd_name, definition=defstring, specifier=specifier, filterchar=filter_char)
+        lexicon.register_gen_command_spec(command_spec)
+
+    prefix_cmd_segment = yaml_config.get('prefix_commands')
+    if not prefix_cmd_segment:
+        raise Exception('YAML configuration does not contain a required "prefix_commands" section.')
+
+    for cmd_name, cmd_def in prefix_cmd_segment.items():
+        defstring = cmd_def['definition']
+        separator = cmd_def['separator']
+
+        command_spec = SMSPrefixSpec(command=cmd_name, definition=defstring, defchar=separator)
+        lexicon.register_pfx_command_spec(command_spec)
+
+    return lexicon
 
 
 def load_dialog_engine(yaml_config: dict, service_registry):
