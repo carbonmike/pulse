@@ -21,102 +21,130 @@ service_objects:
       - name: source_mobile_number
         value: "9178102234"
 
-#        
-# Commands that direct the system to do something OR update the user's status
-#
-# (The command names are quoted because the YAML parser reads certain words (such as "on" and "off") incorrectly
-# as booleans.
-#
-system_commands:
-  'on':
-    definition: 'Go on-line' # string describing what the command does
-    arg_required: False # boolean; does the command require an argument?
-    synonyms: []
 
-  'off':
-    definition: 'Go off-line'
-    arg_required: False
-    synonyms: []
+command_sets:
+  #        
+  # Commands that direct the system to do something OR update the user's status
+  #
+  # (The command names are quoted because the YAML parser reads certain words (such as "on" and "off") incorrectly
+  # as booleans.
+  #
+  system:
+    settings:
 
-  'con':
-    definition: "Connect to a user's stream"
-    arg_required: True
-    synonyms: []
+    handlers:
+      'on': user_online
+      'off': user_offline
+      'con': connect_user_stream
+      'dis': disconnect_user_stream
+      'mute': mute_messages
+      'unmute': unmute_messages
+      'fwd': forward message
+      'arc': archive_message
+      'det': message_details
+      'hlp': display help prompts
+      
+    commands:
+      'on':
+        definition: 'Go on-line' # string describing what the command does
+        arg_required: False # boolean; does the command require an argument?
+        synonyms: []
 
-  'dis':
-    definition: "Disconnect from a user's stream"
-    arg_required: True
-    synonyms: []
+      'off':
+        definition: 'Go off-line'
+        arg_required: False
+        synonyms: []
 
-  'mute':
-    definition: "Mute (but still retain) incoming messages"
-    arg_required: False     
-    synonyms: ['m']
+      'con':
+        definition: "Connect to a user's stream"
+        arg_required: True
+        synonyms: []
 
-  'unmute':
-    definition: "Unmute incoming messages"
-    arg_required: False
-    synonyms: ['um']
+      'dis':
+        definition: "Disconnect from a user's stream"
+        arg_required: True
+        synonyms: []
 
-  'snd':
-    definition: 'Send message'
-    arg_required: True
-    synonyms: []
+      'mute':
+        definition: "Mute (but still retain) incoming messages"
+        arg_required: False     
+        synonyms: ['m']
 
-  'fwd':
-    definition: 'Forward message'
-    arg_required: True
-    synonyms: []
-  
-  'arc':
-    definition: 'Archive message'
-    arg_required: True 
-    synonyms: []
+      'unmute':
+        definition: "Unmute incoming messages"
+        arg_required: False
+        synonyms: ['um']
 
-  'det':
-    definition: 'View message details'
-    arg_required: True
-    synonyms: ['dt']
+      'fwd':
+        definition: 'Forward message'
+        arg_required: True
+        synonyms: []
+      
+      'arc':
+        definition: 'Archive message'
+        arg_required: True 
+        synonyms: []
 
-  'hlp':
-    definition: 'Display help prompts'
-    arg_required: False
-    synonyms: ['?']
+      'det':
+        definition: 'View message details'
+        arg_required: True
+        synonyms: ['dt']
 
-# commands that emit a (full or partial) list of data items
-generator_commands:
-  my:
-    definition: 'List my messages' 
-    specifier: '.'    # separator, usually '.'
-    filter_char: '?' 
+      'hlp':
+        definition: 'Display help prompts'
+        arg_required: False
+        synonyms: ['?']
 
-  msg:
-    definition: 'Display messages from user'
-    specifier: '.'
-    filter_char: '?'
+  # commands that emit a (full or partial) list of data items
+  generator:
+    settings:
+      specifier: '.'
+      filter_char: '?'
 
-#
-# The command name (its "tag") plus an alphanumeric designator, make up the prefix.
-# The prefix is separated from the (optional) command body by the defchar.
-# A function command has two forms:
-#   the form containing no body (just a prefix) is its "call" form.
-#   the form containing a body is its "define" form.
+    commands:
+      my:
+        definition: 'List my messages' 
+        
+      msg:
+        definition: 'Display messages from user'
+        
+      strm:
+        definition: "Display messages from a user's stream"
 
-function_commands:
-  '$':
-    definition: 'Create a user-defined macro'  
-    separator: ':'  # separator character between the prefix and the command body
+  #
+  # The command symbol (its "tag") plus an alphanumeric designator, make up the prefix.
+  # The prefix is separated from the (optional) command body by the defchar.
+  # 
+  # A function command has three basic modes:
+  #   "tag" mode is invoked by specifying only the function's symbol.
+  #   "call" mode is invoked by specifying the function's symbol plus an alphanumeric designator.
+  #   "define" mode is invoked by specifying the symbol, an optional modifier, and a command body.
+  #
+  # Not every command-mode has to be associated with a behavior. The implementor may choose to only
+  # assign a behavior to a single mode.
+  #
+  # A function command can also contain an optional string called an extension,
+  # which appears immediately after the prefix and is separated from it by a "modifier"
+  # or modchar. This allows implementors to alter the way a function works by registering
+  # one or more additional handlers, each keyed to a specific modifier.
+  #
+  #
+  function:
+    settings:
+      def_char: ':' # separator character between the prefix and the command body; signifies "define" form
+      mod_char: '*' # separator char between the prefix and an optional modifier (and before the comand body)
 
-  '@':
-    definition: 'Send a message to a user via his or her handle'
-    separator: ':'
+    commands:
+      '$':
+        definition: 'Create / call a user-defined macro'
+        modifiers: ['r'] # read out a macro but do not execute it 
 
-  '&':
-    definition: 'Create a user handle for yourself'
-    separator: ' '
+      '@':
+        definition: 'Communicate with a user via his or her handle'
+        modifiers: ['prv']
 
-  '#':
-    definition: 'Create (or look) up an abbreviation'
-    separator: ':'
+      '#':
+        definition: 'Create (or look) up an abbreviation'
+        modifiers: []
 
-
+    

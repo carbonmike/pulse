@@ -107,7 +107,7 @@ class CommandLexicon(object):
         return tag in self.function_commands
 
 
-    def match_sms_command(self, cmd_string):
+    def match_sys_command(self, cmd_string):
         for key, cmd_spec in self.system_commands.items():
             if cmd_string == key:
                 return cmd_spec
@@ -282,7 +282,7 @@ class SMSMessageParser(object):
                                                                 modifiers=modifiers))
 
             # if we didn't find a generator, perhaps the user issued a regular sms comand                                             
-            command_spec = self.lexicon.match_sms_command(command_string)
+            command_spec = self.lexicon.match_sys_command(command_string)
             if command_spec:
                 print('###------------ detected system command: %s' % command_string)
                 return CommandInput(cmd_type='syscommand',
@@ -386,11 +386,11 @@ def load_lexicon(yaml_config: dict) -> CommandLexicon:
     
     lexicon = CommandLexicon()
 
-    sys_cmd_segment = yaml_config.get('system_commands')
+    sys_cmd_segment = yaml_config['command_sets'].get('system')
     if not sys_cmd_segment:
-        raise Exception('YAML configuration does not contain a required "system_commands" section.')
+        raise Exception('YAML configuration does not contain a required [command_sets][system] section.')
 
-    for cmd_name, cmd_def in sys_cmd_segment.items():
+    for cmd_name, cmd_def in sys_cmd_segment['commands'].items():
         defstring = cmd_def['definition']
         arg_required = cmd_def['arg_required']
         synonyms = cmd_def.get('synonyms', [])
@@ -398,34 +398,70 @@ def load_lexicon(yaml_config: dict) -> CommandLexicon:
         command_spec = SMSCommandSpec(command=cmd_name, definition=defstring, synonyms=synonyms, tag_required=arg_required)
         lexicon.register_sys_command_spec(command_spec)
 
-    gen_cmd_segment = yaml_config.get('generator_commands')
+    gen_cmd_segment = yaml_config['command_sets'].get('generator')
     if not gen_cmd_segment:
         raise Exception('YAML configuration does not contain a required "generator_commands" section.')
 
-    for cmd_name, cmd_def in gen_cmd_segment.items():
-        defstring = cmd_def['definition']
-        specifier = cmd_def['specifier']
-        filter_char = cmd_def['filter_char']
-
+    specifier = gen_cmd_segment['settings']['specifier']
+    filter_char = gen_cmd_segment['settings']['filter_char']
+    for cmd_name, cmd_def in gen_cmd_segment['commands'].items():
+        defstring = cmd_def['definition']        
         command_spec = SMSGeneratorSpec(command=cmd_name, definition=defstring, specifier=specifier, filterchar=filter_char)
         lexicon.register_gen_command_spec(command_spec)
 
-    function_cmd_segment = yaml_config.get('function_commands')
+    function_cmd_segment = yaml_config['command_sets'].get('function')
     if not function_cmd_segment:
         raise Exception('YAML configuration does not contain a required "function_commands" section.')
 
-    for cmd_name, cmd_def in function_cmd_segment.items():
+    defchar = function_cmd_segment['settings']['def_char']
+    modchar = function_cmd_segment['settings']['mod_char']
+    for cmd_name, cmd_def in function_cmd_segment['commands'].items():
         defstring = cmd_def['definition']
-        separator = cmd_def['separator']
-
-        command_spec = SMSFunctionSpec(command=cmd_name, definition=defstring, defchar=separator)
+        modifiers = cmd_def.get('modifiers', [])
+        command_spec = SMSFunctionSpec(command=cmd_name, definition=defstring, defchar=defchar)        
         lexicon.register_func_command_spec(command_spec)
 
     return lexicon
 
 
-def load_dialog_engine(yaml_config: dict, service_registry):
-    pass
+def load_dialog_engine(yaml_config: dict, lexicon: CommandLexicon, service_registry):
+    engine = DialogEngine()
+    handler_module = __import__(yaml_config['globals']['handler_module'])  
+
+    # register handlers for system commands
+    sys_handler_segment = yaml_config['command_sets']['system']['handlers']
+    for cmd_name, funcname in sys_handler_segment.items():
+    
+        cmd_spec = lexicon.match_sys_command(cmd_name)
+        if not cmd_spec:
+            raise Exception(f'No system command "{cmd_name}" has been registered; cannot assign handler function.')
+        
+        handler_function = common.load_class(funcname, handler_module)
+        engine.register_cmd_spec(cmd_spec, handler_function)
+    
+    # register handler for generator commands
+    gen_handler_segment = yaml_config['command_sets']['generator']['handlers']
+    for cmd_name, funcname in gen_handler_segment.items():
+    
+        cmd_spec = lexicon.match_generator_command(cmd_name)
+        if not cmd_spec:
+            raise Exception(f'No generator command "{cmd_name}" has been registered; cannot assign handler function.')
+
+        handler_function = common.load_class(funcname, handler_module)
+        engine.register_cmd_spec(cmd_spec, handler_function)
+    
+    # register function handlers for function-type commands
+    func_handler_segment = yaml_config['command_sets']['function']['handlers']
+    for cmd_name, func_name in func_handler_segment.items():
+
+        cmd_spec = lexicon.match_function_command(cmd_name)
+        if not cmd_spec:
+            raise Exception(f'No function command "{cmd_name}" has been registered; cannot assign handler function.')
+
+        handler_function = common.load_class(funcname, handler_module)
+        engine.register_cmd_spec(cmd_spec, handler_function)
+
+    return engine
 
 
 def load_command_dispatcher(yaml_config: dict, service_registry):

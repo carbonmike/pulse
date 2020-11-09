@@ -21,14 +21,13 @@ def main(args):
     registry = common.ServiceObjectRegistry(service_tbl)
     command_lexicon = sms.load_lexicon(yaml_config)
 
-    print(command_lexicon.compile_help_string())
+    #print(command_lexicon.compile_help_string())
 
     parser = sms.SMSMessageParser(command_lexicon, '-')
     print(parser.parse_sms_message_body('Hlp'))
-    print(parser.parse_sms_message_body('on'))
+    #print(parser.parse_sms_message_body('on'))
 
     print(parser.parse_sms_message_body('$mymacro:help'))
-
 
 
 if __name__ == '__main__':
