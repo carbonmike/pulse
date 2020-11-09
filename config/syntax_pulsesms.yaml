@@ -6,6 +6,7 @@ globals:
   system_id: pulse
   network_id: fsny
   service_module: pulse_sms_services
+  sms_command_handler_module: sms_handlers
 
 service_objects:
   sms:
@@ -28,14 +29,34 @@ service_objects:
 #
 system_commands:
   'on':
-    definition: 'User coming on-line' # string describing what the command does
+    definition: 'Go on-line' # string describing what the command does
     arg_required: False # boolean; does the command require an argument?
     synonyms: []
 
   'off':
-    definition: 'User going off-line'
+    definition: 'Go off-line'
     arg_required: False
     synonyms: []
+
+  'con':
+    definition: "Connect to a user's stream"
+    arg_required: True
+    synonyms: []
+
+  'dis':
+    definition: "Disconnect from a user's stream"
+    arg_required: True
+    synonyms: []
+
+  'mute':
+    definition: "Mute (but still retain) incoming messages"
+    arg_required: False     
+    synonyms: ['m']
+
+  'unmute':
+    definition: "Unmute incoming messages"
+    arg_required: False
+    synonyms: ['um']
 
   'snd':
     definition: 'Send message'
@@ -74,8 +95,14 @@ generator_commands:
     specifier: '.'
     filter_char: '?'
 
+#
+# The command name (its "tag") plus an alphanumeric designator, make up the prefix.
+# The prefix is separated from the (optional) command body by the defchar.
+# A function command has two forms:
+#   the form containing no body (just a prefix) is its "call" form.
+#   the form containing a body is its "define" form.
 
-prefix_commands:
+function_commands:
   '$':
     definition: 'Create a user-defined macro'  
     separator: ':'  # separator character between the prefix and the command body
@@ -89,9 +116,7 @@ prefix_commands:
     separator: ' '
 
   '#':
-    definition: 'Look up an abbreviation'
+    definition: 'Create (or look) up an abbreviation'
     separator: ':'
 
-
-command_macros:
 

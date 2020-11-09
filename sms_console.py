@@ -23,6 +23,13 @@ def main(args):
 
     print(command_lexicon.compile_help_string())
 
+    parser = sms.SMSMessageParser(command_lexicon, '-')
+    print(parser.parse_sms_message_body('Hlp'))
+    print(parser.parse_sms_message_body('on'))
+
+    print(parser.parse_sms_message_body('$mymacro:help'))
+
+
 
 if __name__ == '__main__':
     args = docopt.docopt(__doc__)
