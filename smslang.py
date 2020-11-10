@@ -426,32 +426,32 @@ def load_lexicon(yaml_config: dict) -> CommandLexicon:
 
 def load_dialog_engine(yaml_config: dict, lexicon: CommandLexicon, service_registry):
     engine = DialogEngine()
-    handler_module = __import__(yaml_config['globals']['handler_module'])  
+    handler_module_name = yaml_config['globals']['command_handler_module']
 
     # register handlers for system commands
-    sys_handler_segment = yaml_config['command_sets']['system']['handlers']
+    sys_handler_segment = yaml_config['command_sets']['system'].get('handlers') or {}
     for cmd_name, funcname in sys_handler_segment.items():
     
         cmd_spec = lexicon.match_sys_command(cmd_name)
         if not cmd_spec:
             raise Exception(f'No system command "{cmd_name}" has been registered; cannot assign handler function.')
         
-        handler_function = common.load_class(funcname, handler_module)
-        engine.register_cmd_spec(cmd_spec, handler_function)
+        handler_function = common.load_class(funcname, handler_module_name)
+        engine.register_cmd_handler(cmd_spec, handler_function)
     
     # register handler for generator commands
-    gen_handler_segment = yaml_config['command_sets']['generator']['handlers']
-    for cmd_name, funcname in gen_handler_segment.items():
+    gen_handler_segment = yaml_config['command_sets']['generator'].get('handlers') or {}
+    for cmd_name, funcname in gen_handler_segment.items(): 
     
         cmd_spec = lexicon.match_generator_command(cmd_name)
         if not cmd_spec:
             raise Exception(f'No generator command "{cmd_name}" has been registered; cannot assign handler function.')
 
         handler_function = common.load_class(funcname, handler_module)
-        engine.register_cmd_spec(cmd_spec, handler_function)
+        engine.register_cmd_handler(cmd_spec, handler_function)
     
     # register function handlers for function-type commands
-    func_handler_segment = yaml_config['command_sets']['function']['handlers']
+    func_handler_segment = yaml_config['command_sets']['function'].get('handlers') or {}
     for cmd_name, func_name in func_handler_segment.items():
 
         cmd_spec = lexicon.match_function_command(cmd_name)
@@ -459,7 +459,7 @@ def load_dialog_engine(yaml_config: dict, lexicon: CommandLexicon, service_regis
             raise Exception(f'No function command "{cmd_name}" has been registered; cannot assign handler function.')
 
         handler_function = common.load_class(funcname, handler_module)
-        engine.register_cmd_spec(cmd_spec, handler_function)
+        engine.register_cmd_handler(cmd_spec, handler_function)
 
     return engine
 

@@ -6,10 +6,10 @@ globals:
   system_id: pulse
   network_id: fsny
   service_module: pulse_sms_services
-  sms_command_handler_module: sms_handlers
+  command_handler_module: sms_handlers
 
 service_objects:
-  sms:
+  sms_twilio:
     class: SMSService
     init_params:
       - name: account_sid
@@ -33,16 +33,16 @@ command_sets:
     settings:
 
     handlers:
-      'on': user_online
-      'off': user_offline
+      'on': handle_user_online
+      'off': handle_user_offline
       'con': connect_user_stream
       'dis': disconnect_user_stream
       'mute': mute_messages
       'unmute': unmute_messages
-      'fwd': forward message
+      'fwd': forward_message
       'arc': archive_message
       'det': message_details
-      'hlp': display help prompts
+      'hlp': display_help_prompts
       
     commands:
       'on':
@@ -101,6 +101,8 @@ command_sets:
       specifier: '.'
       filter_char: '?'
 
+    handlers:
+
     commands:
       my:
         definition: 'List my messages' 
@@ -134,6 +136,8 @@ command_sets:
       def_char: ':' # separator character between the prefix and the command body; signifies "define" form
       mod_char: '*' # separator char between the prefix and an optional modifier (and before the comand body)
 
+    handlers:
+      
     commands:
       '$':
         definition: 'Create / call a user-defined macro'

@@ -12,6 +12,20 @@ import docopt
 
 import smslang as sms
 
+
+def test_lexicon(command_lexicon):
+    print(command_lexicon.compile_help_string())
+
+
+def test_command_parsing(parser):
+
+    print(parser.parse_sms_message_body('Hlp'))
+    print(parser.parse_sms_message_body('on'))
+    print(parser.parse_sms_message_body('$mymacro:help'))
+
+    
+    
+
 def main(args):
 
     configfile = args['<configfile>']
@@ -19,15 +33,19 @@ def main(args):
 
     service_tbl = snap.initialize_services(yaml_config)
     registry = common.ServiceObjectRegistry(service_tbl)
+
     command_lexicon = sms.load_lexicon(yaml_config)
-
-    #print(command_lexicon.compile_help_string())
-
     parser = sms.SMSMessageParser(command_lexicon, '-')
-    print(parser.parse_sms_message_body('Hlp'))
-    #print(parser.parse_sms_message_body('on'))
+    engine = sms.load_dialog_engine(yaml_config, command_lexicon, registry)
 
-    print(parser.parse_sms_message_body('$mymacro:help'))
+    sms_message = 'hlp'
+    
+    ctx = sms.SMSDialogContext(user=None, source_number='9171234567', message=sms.unquote_plus(sms_message))
+    command = parser.parse_sms_message_body(sms_message)
+    response = engine.reply_command(command, ctx, registry)
+
+    print(f'\n{response}\n')
+    
 
 
 if __name__ == '__main__':
