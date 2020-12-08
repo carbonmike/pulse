@@ -1,0 +1,38 @@
+
+
+tag_settings:
+  maps:
+    mymap:
+      settings:
+        scope: # global | per_user | expression
+        targets: [user1, user2, john*, ...]
+        tag_handling_logic: # replace | combine | strip
+
+      - user_tag: world
+        my_tag: global
+
+      - user_tag: economics
+        my_tag: money
+
+    tarif_map:
+      settings:
+        scope: # global | per_user | expression
+        targets: [johnsmith, ...]
+        tag_handling_logic: # combine
+        
+      - user_tag: world
+        my_tag: global
+
+      - user_tag: economics
+        my_tag: money
+
+
+
+
+
+
+
+
+
+
+
