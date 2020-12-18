@@ -310,37 +310,37 @@ class DialogEngine(object):
         self.function_dispatch_tbl[str(prefix_spec)] = handler_func
 
 
-    def _reply_function_command(self, function_cmd, dialog_context, service_registry, **kwargs):
+    def _reply_function_command(self, function_cmd, dialog_context, lexicon, service_registry, **kwargs):
         command = self.function_dispatch_tbl.get(str(function_cmd.cmdspec))
         if not command:
             return 'No handler registered in SMS DialogEngine for function command %s.' % function_cmd.cmdspec.command
-        return command(function_cmd, self, dialog_context, service_registry)
+        return command(function_cmd, self, dialog_context, lexicon, service_registry)
 
 
-    def _reply_generator_command(self, gen_cmd, dialog_context, service_registry, **kwargs):
+    def _reply_generator_command(self, gen_cmd, dialog_context, lexicon, service_registry, **kwargs):
         list_generator = self.generator_dispatch_tbl.get(str(gen_cmd.cmdspec))
         if not list_generator:
             return 'No handler registered in SMS DialogEngine for generator command %s.' % gen_cmd.cmdspec.command
-        return list_generator(gen_cmd, self, dialog_context, service_registry)
+        return list_generator(gen_cmd, self, dialog_context, lexicon, service_registry)
 
 
-    def _reply_sys_command(self, sys_cmd, dialog_context, service_registry, **kwargs):
+    def _reply_sys_command(self, sys_cmd, dialog_context, lexicon, service_registry, **kwargs):
         handler = self.msg_dispatch_tbl.get(str(sys_cmd.cmdspec))
         if not handler:
             return 'No handler registered in SMS DialogEngine for system command %s.' % sys_cmd.cmdspec.command
-        return handler(sys_cmd, dialog_context, service_registry)
+        return handler(sys_cmd, dialog_context, lexicon, service_registry)
 
 
-    def reply_command(self, command_input, dialog_context, service_registry, **kwargs):
+    def reply_command(self, command_input, dialog_context, lexicon, service_registry, **kwargs):
         # command types: generator, syscommand, prefix
-        if command_input.cmd_type == 'prefix':
-            return self._reply_prefix_command(command_input.cmd_object, dialog_context, service_registry)
+        if command_input.cmd_type == 'function':
+            return self._reply_prefix_command(command_input.cmd_object, dialog_context, lexicon, service_registry)
 
         elif command_input.cmd_type == 'syscommand':
-            return self._reply_sys_command(command_input.cmd_object, dialog_context, service_registry)
+            return self._reply_sys_command(command_input.cmd_object, dialog_context, lexicon, service_registry)
 
         elif command_input.cmd_type == 'generator':
-            return self._reply_generator_command(command_input.cmd_object, dialog_context, service_registry)
+            return self._reply_generator_command(command_input.cmd_object, dialog_context, lexicon, service_registry)
 
         else:
             raise Exception('Unrecognized command input type %s.' % command_input.cmd_type)
@@ -364,8 +364,8 @@ class SMSResponder(object):
             command_input = self.parser.parse_sms_message_body(raw_message_body)
             print('#----- Resolved command: %s' % str(command_input))
 
-            response = self.dialog_engine.reply_command(command_input, dlg_context, service_registry)
-            self.sms_service.send_sms(mobile_number, response)
+            response = self.dialog_engine.reply_command(command_input, dlg_context, self.lexicon, service_registry)
+            self.sms_service.send_sms(mobile_number, response) 
 
         except IncompleteFunctionCommand as err:
             print('Error data: %s' % err)

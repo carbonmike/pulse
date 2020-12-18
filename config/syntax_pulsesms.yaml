@@ -136,8 +136,12 @@ command_sets:
       def_char: ':' # separator character between the prefix and the command body; signifies "define" form
       mod_char: '*' # separator char between the prefix and an optional modifier (and before the comand body)
 
-    handlers:
-      
+    handlers: # handler functions for each of the three command modes
+      '$':
+        tag: handle_macro_tag
+        call: handle_macro_call
+        define: handle_macro_define
+  
     commands:
       '$':
         definition: 'Create / call a user-defined macro'

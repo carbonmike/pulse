@@ -19,14 +19,19 @@ def test_lexicon(command_lexicon):
 
 def test_command_parsing(parser):
 
-    print(parser.parse_sms_message_body('Hlp'))
-    print(parser.parse_sms_message_body('on'))
+    #print(parser.parse_sms_message_body('Hlp'))
+    #print(parser.parse_sms_message_body('on'))
     print(parser.parse_sms_message_body('$mymacro:help'))
 
     
     
 
 def main(args):
+
+    # Pulse subsystems:
+    # scroll (SMS)
+    # atrium (message routing/control)
+    #   (web-aware front end)
 
     configfile = args['<configfile>']
     yaml_config = common.read_config_file(configfile)
@@ -42,7 +47,7 @@ def main(args):
     
     ctx = sms.SMSDialogContext(user=None, source_number='9171234567', message=sms.unquote_plus(sms_message))
     command = parser.parse_sms_message_body(sms_message)
-    response = engine.reply_command(command, ctx, registry)
+    response = engine.reply_command(command, ctx, command_lexicon, registry)
 
     print(f'\n{response}\n')
     
