@@ -447,7 +447,7 @@ def load_dialog_engine(yaml_config: dict, lexicon: CommandLexicon, service_regis
         if not cmd_spec:
             raise Exception(f'No generator command "{cmd_name}" has been registered; cannot assign handler function.')
 
-        handler_function = common.load_class(funcname, handler_module)
+        handler_function = common.load_class(funcname, handler_module_name)
         engine.register_cmd_handler(cmd_spec, handler_function)
     
     # register function handlers for function-type commands
@@ -458,7 +458,7 @@ def load_dialog_engine(yaml_config: dict, lexicon: CommandLexicon, service_regis
         if not cmd_spec:
             raise Exception(f'No function command "{cmd_name}" has been registered; cannot assign handler function.')
 
-        handler_function = common.load_class(funcname, handler_module)
+        handler_function = common.load_class(funcname, handler_module_name)
         engine.register_cmd_handler(cmd_spec, handler_function)
 
     return engine

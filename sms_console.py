@@ -47,9 +47,11 @@ def main(args):
     
     ctx = sms.SMSDialogContext(user=None, source_number='9171234567', message=sms.unquote_plus(sms_message))
     command = parser.parse_sms_message_body(sms_message)
-    response = engine.reply_command(command, ctx, command_lexicon, registry)
 
-    print(f'\n{response}\n')
+    while True:        
+        command = input('Enter a Pulse SMS command.\n>')
+        response = engine.reply_command(command, ctx, command_lexicon, registry)
+        print(f'\n{response}\n')
     
 
 
