@@ -7,7 +7,8 @@ from smslang import SystemCommand, GeneratorCommand, FunctionCommand
 
 
 def handle_user_online(cmd_object, dlg_context, lexicon, service_registry, **kwargs) -> str:
-    return '\n\n placeholder for user-online handler'
+    #return '\n\n placeholder for user-online handler'
+    return 'Yup, you are online now.'
 
 
 def handle_user_offline(cmd_object, dlg_context, lexicon, service_registry, **kwargs) -> str:

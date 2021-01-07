@@ -1,0 +1,20 @@
+version: '3'
+services:
+  
+  db:
+    build:
+      dockerfile: pgsql.Dockerfile
+      context: .
+    environment:
+      POSTGRES_PASSWORD: "postgres"
+    ports:
+      - "5433:5432"
+    networks:
+      - default
+    volumes:
+      - ./pulsedb/init:/docker-entrypoint-initdb.d
+ 
+
+volumes:
+  pgdata1:
+    driver: local
