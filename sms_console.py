@@ -23,8 +23,6 @@ def test_command_parsing(parser):
     #print(parser.parse_sms_message_body('on'))
     print(parser.parse_sms_message_body('$mymacro:help'))
 
-    
-    
 
 def main(args):
 
@@ -43,17 +41,13 @@ def main(args):
     parser = sms.SMSMessageParser(command_lexicon, '-')
     engine = sms.load_dialog_engine(yaml_config, command_lexicon, registry)
 
-    sms_message = 'hlp'
-    
-    ctx = sms.SMSDialogContext(user=None, source_number='9171234567', message=sms.unquote_plus(sms_message))
-    command = parser.parse_sms_message_body(sms_message)
-
     while True:        
-        command = input('Enter a Pulse SMS command.\n>')
+        sms_message = input('Enter a Pulse SMS command.\n>')
+        ctx = sms.SMSDialogContext(user=None, source_number='9171234567', message=sms.unquote_plus(sms_message))
+        command = parser.parse_sms_message_body(sms_message)
         response = engine.reply_command(command, ctx, command_lexicon, registry)
         print(f'\n{response}\n')
     
-
 
 if __name__ == '__main__':
     args = docopt.docopt(__doc__)
