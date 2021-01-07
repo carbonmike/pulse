@@ -1,0 +1,52 @@
+
+
+PREREQUISITES:
+
+Python 3.5 or higher
+Unix command-line utilities: 
+- curl
+- jq
+- pipenv
+
+Library dependencies:
+- postgresql-client
+- postgresql-contrib
+- libpq-dev
+
+
+To set up the tooling environment:
+
+issue "pipenv install" to install the Python dependencies
+issue "pipenv shell" to start the virtual environment
+set the necessary environment vars: 
+
+PULSE_HOME (this should be the repository root directory)
+PULSE_DB_HOST (if using the Postgres Docker container, this should be the container's ip address. Run pg_docker_ip.sh to find it)
+PULSE_DB_USER (default is "postgres" for the containerized PostgreSQL instance)
+PULSE_DB_PASSWORD (default is "postgres")
+
+Also, the PYTHONPATH must include the repository root directory.
+
+The Dockerized PostgreSQL database uses "pulse" as the DB name. Set the PGPASSWORD environment variable
+to allow the database-related make targets to run without password prompting.
+
+Related make targets are labeled according to their function. 
+The database-related ones begin with "db"; the ones dealing with data pipelines start with "pipeline; the API-related ones
+have the prefix "api".
+
+
+> To spin up the Postgres DB:
+
+issue "make db-up"
+
+> To prepare a new database from scratch:
+
+issue the following:
+
+"make db-reset"  (WARNING: this is destructive and involves a db drop and recreate)
+
+
+
+
+
+
