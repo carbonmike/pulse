@@ -75,6 +75,11 @@ command_sets:
         arg_required: False
         synonyms: ['um']
 
+      'snd':
+        definition: 'Send message'
+        arg_required: True
+        synonyms: ['s']
+
       'fwd':
         definition: 'Forward message'
         arg_required: True

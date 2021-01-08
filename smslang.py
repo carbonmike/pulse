@@ -28,6 +28,7 @@ SMSFunctionSpec = namedtuple('SMSFunctionSpec', 'command definition defchar')
 SystemCommand = namedtuple('SystemCommand', 'content_tag cmdspec modifiers')
 GeneratorCommand = namedtuple('GeneratorCommand', 'cmd_string cmdspec modifiers')
 FunctionCommand = namedtuple('FunctionCommand', 'mode tag function_name body cmdspec') # modes: define, call
+
 CommandInput = namedtuple('CommandInput', 'cmd_type cmd_object')  # command types: generator, syscommand, function
 
 SMSDialogContext = namedtuple('SMSDialogContext', 'user source_number message')
@@ -88,6 +89,10 @@ class CommandLexicon(object):
         self.function_commands = {}
         self.command_macros = {}
 
+    def system_spec(self, cmd: SystemCommand):
+        return self.system_commands[cmd]
+
+
     def register_sys_command_spec(self, cmdspec: SMSCommandSpec):
         self.system_commands[cmdspec.command] = cmdspec
         
@@ -121,7 +126,7 @@ class CommandLexicon(object):
             delimiter = cmd_spec.specifier
             filter_char = cmd_spec.filterchar
 
-            print('the filter character is [%s].' % filter_char)
+            #print('the filter character is [%s].' % filter_char)
 
             if cmd_string.split(delimiter)[0] == key:
                 return cmd_spec
@@ -200,9 +205,11 @@ class SMSMessageParser(object):
         # make sure there's no leading whitespace, then see what we've got
         body = unquote_plus(raw_body).lstrip().rstrip().lower()
 
+        '''
         print('\n\n###__________ inside parse logic. Raw message body is:')
         print(body)
         print('###__________\n\n')
+        '''
 
         body_prefix = body.split(self.prefix_separator)[0]
         prefix_handler = self.systemdata_prefix_handlers.get(body_prefix)
@@ -222,7 +229,7 @@ class SMSMessageParser(object):
                 command_string = tokens[1].lower()
                 modifiers = tokens[2:]
 
-            print('#--------- looking up system SMS command: %s...' % command_string)
+            #print('#--------- looking up system SMS command: %s...' % command_string)
             command_spec = self.lexicon.lookup_sms_command(command_string)
             if command_spec:
                 return CommandInput(cmd_type='syscommand', cmd_object=SystemCommand(content_tag=content_tag,
@@ -272,10 +279,10 @@ class SMSMessageParser(object):
             # see if we received a generator 
             # (a command which generates a list or a slice of a list)
 
-            print('******************* LOOKING UP GENERATOR CMD for string [%s]...' % command_string)
+            #print('******************* LOOKING UP GENERATOR CMD for string [%s]...' % command_string)
             command_spec = self.lexicon.match_generator_command(command_string)
             if command_spec:
-                print('###------------ detected GENERATOR-type command: %s' % command_string)            
+                #print('###------------ detected GENERATOR-type command: %s' % command_string)            
                 return CommandInput(cmd_type='generator',
                                     cmd_object=GeneratorCommand(cmd_string=command_string,
                                                                 cmdspec=command_spec,
@@ -284,7 +291,7 @@ class SMSMessageParser(object):
             # if we didn't find a generator, perhaps the user issued a regular sms comand                                             
             command_spec = self.lexicon.match_sys_command(command_string)
             if command_spec:
-                print('###------------ detected system command: %s' % command_string)
+                #print('###------------ detected system command: %s' % command_string)
                 return CommandInput(cmd_type='syscommand',
                                     cmd_object=SystemCommand(content_tag=content_tag,
                                                             cmdspec=command_spec,
