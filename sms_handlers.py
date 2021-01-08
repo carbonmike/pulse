@@ -59,30 +59,49 @@ def coalesce(delimiter, *modifiers):
     return ' '.join(tokens)
 
 
-def send_message(cmd_object, dlg_context, lexicon, service_registry, **kwargs) -> str:
+def pulse_message(cmd_object, dlg_context, lexicon, service_registry, **kwargs) -> str:
     if not len(cmd_object.modifiers):
-        return f'usage: {cmd_object.cmdspec.command} <message> @<user>'        
+        return f'usage: {cmd_object.cmdspec.command} <message> <user>'        
     
-    message = coalesce('"', cmd_object.modifiers[0: -1])
-    
-    return f'message "{message}" sent to outgoing stream.'
-
-
-def forward_message(cmd_object, dlg_context, lexicon, service_registry, **kwargs) -> str:
-
-    if len(cmd_object.modifiers) < 2:
-        return f'usage: {cmd_object.cmdspec.command} <message> @<user>'
-    
-    message = coalesce('"', *cmd_object.modifiers[0:-1])
-    userid = cmd_object.modifiers[-1]
+    message = coalesce('"', *cmd_object.modifiers[0: -1])
 
     # if the userid string is of the format "@<user>", then send message to the named user on THIS Pulse server.
     # If the userid string is of the format "@<server>.<user>", then send message to the named user on 
     # registered remote server <server>. (The server has to have been previously registered as a remote.)
+    
+    return f'message "{message}" sent to your outgoing stream.'
 
-    return f'message "{message}" forwarded to user {userid}.'
+
+def send_private_message(cmd_object, dlg_context, lexicon, service_registry, **kwargs) -> str:
+
+    if len(cmd_object.modifiers) < 2:
+        return f'usage: {cmd_object.cmdspec.command} <message> <user>'
+    
+    message = coalesce('"', *cmd_object.modifiers[0:-1])
+    userid = cmd_object.modifiers[-1]
+
+    # if the userid string is of the format "<user>", then send message to the named user on THIS Pulse server.
+    # If the userid string is of the format "<server>.<user>", then send message to the named user on 
+    # registered remote server <server>. (The server has to have been previously registered as a remote.)
+
+    return f'private message "{message}" sent to user {userid}.'
     
 
+def forward_private_message(cmd_object, dlg_context, lexicon, service_registry, **kwargs) -> str:
+
+    if len(cmd_object.modifiers) < 2:
+        return f'usage: {cmd_object.cmdspec.command} <message_ID> <user>'
+    
+    # TODO: change this. We can only forward messages by ID
+    message = coalesce('"', *cmd_object.modifiers[0:-1])
+    userid = cmd_object.modifiers[-1]
+
+    # if the userid string is of the format "<user>", then send message to the named user on THIS Pulse server.
+    # If the userid string is of the format "<server>.<user>", then send message to the named user on 
+    # registered remote server <server>. (The server has to have been previously registered as a remote.)
+
+    return f'private message "{message}" forwarded to user {userid}.'
+    
 
 def archive_message(cmd_object, dlg_context, lexicon, service_registry, **kwargs) -> str:
 
@@ -91,6 +110,10 @@ def archive_message(cmd_object, dlg_context, lexicon, service_registry, **kwargs
 
 def message_details(cmd_object, dlg_context, lexicon, service_registry, **kwargs) -> str:
     return 'showing message details'
+
+
+def register_remote_pulse_server(cmd_object, dlg_context, lexicon, service_registry, **kwargs) -> str:
+    return 'registered remote server.'
 
 
 def display_help_prompts(cmd_object, dlg_context, lexicon, service_registry, **kwargs) -> str:

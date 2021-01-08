@@ -1,4 +1,6 @@
 
+# How do we deal with incoming messages from a user stream where the message has tags
+# but we may want to auto-tag the data using different words?
 
 tag_settings:
   maps:

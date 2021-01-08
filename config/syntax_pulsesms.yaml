@@ -39,11 +39,12 @@ command_sets:
       'dis': disconnect_user_stream
       'mute': mute_messages
       'unmute': unmute_messages
-      'snd': send_message 
-      'fwd': forward_message
+      'pulse': pulse_message
+      'snd': send_private_message
+      'fwd': forward_private_message
       'arc': archive_message
       'det': message_details
-      'reg': register remote pulse server
+      'reg': register_remote_pulse_server
       'hlp': display_help_prompts
       
     commands:
@@ -77,15 +78,20 @@ command_sets:
         arg_required: False
         synonyms: ['um']
 
+      'pulse':
+        definition: 'Send message to my outgoing stream'
+        arg_required: True
+        synonyms: ['p']
+
       'snd':
-        definition: 'Send message'
+        definition: 'Send private message to user'
         arg_required: True
         synonyms: ['s']
 
       'fwd':
-        definition: 'Forward message'
+        definition: 'Forward private message to user'
         arg_required: True
-        synonyms: []
+        synonyms: ['f']
       
       'arc':
         definition: 'Archive message'
