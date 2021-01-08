@@ -39,9 +39,11 @@ command_sets:
       'dis': disconnect_user_stream
       'mute': mute_messages
       'unmute': unmute_messages
+      'snd': send_message 
       'fwd': forward_message
       'arc': archive_message
       'det': message_details
+      'reg': register remote pulse server
       'hlp': display_help_prompts
       
     commands:
@@ -95,6 +97,11 @@ command_sets:
         arg_required: True
         synonyms: ['dt']
 
+      'reg':
+        definition: 'Register remote Pulse server'
+        arg_required: True
+        synonyms: []
+
       'hlp':
         definition: 'Display help prompts'
         arg_required: False
@@ -117,6 +124,9 @@ command_sets:
         
       strm:
         definition: "Display messages from a user's stream"
+
+      rmt:
+        definition: "Display registered remote Pulse servers"
 
   #
   # The command symbol (its "tag") plus an alphanumeric designator, make up the prefix.

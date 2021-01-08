@@ -45,9 +45,43 @@ def unmute_messages(cmd_object, dlg_context, lexicon, service_registry, **kwargs
     return 'all streams unmuted.'
 
 
+def coalesce(delimiter, *modifiers):
+    tokens = []
+    for m in modifiers:
+        if m.startswith(delimiter):
+            tokens.append(m.lstrip(delimiter))
+        elif m.endswith(delimiter):
+            tokens.append(m.rstrip(delimiter))
+            break
+        else:
+            tokens.append(m)
+    
+    return ' '.join(tokens)
+
+
+def send_message(cmd_object, dlg_context, lexicon, service_registry, **kwargs) -> str:
+    if not len(cmd_object.modifiers):
+        return f'usage: {cmd_object.cmdspec.command} <message> @<user>'        
+    
+    message = coalesce('"', cmd_object.modifiers[0: -1])
+    
+    return f'message "{message}" sent to outgoing stream.'
+
+
 def forward_message(cmd_object, dlg_context, lexicon, service_registry, **kwargs) -> str:
 
-    return 'forwarding message'
+    if len(cmd_object.modifiers) < 2:
+        return f'usage: {cmd_object.cmdspec.command} <message> @<user>'
+    
+    message = coalesce('"', *cmd_object.modifiers[0:-1])
+    userid = cmd_object.modifiers[-1]
+
+    # if the userid string is of the format "@<user>", then send message to the named user on THIS Pulse server.
+    # If the userid string is of the format "@<server>.<user>", then send message to the named user on 
+    # registered remote server <server>. (The server has to have been previously registered as a remote.)
+
+    return f'message "{message}" forwarded to user {userid}.'
+    
 
 
 def archive_message(cmd_object, dlg_context, lexicon, service_registry, **kwargs) -> str:
