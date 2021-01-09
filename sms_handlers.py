@@ -21,6 +21,7 @@ def connect_user_stream(cmd_object, dlg_context, lexicon, service_registry, **kw
     if not len(cmd_object.modifiers):
         return f'The "{cmd_object.cmdspec.command}" command requires a @user parameter.'
 
+    # under the covers, this will mean subscribing to a Kafka topic
     return f'connected stream from user {cmd_object.modifiers[0]}'
 
 
