@@ -39,7 +39,7 @@ command_sets:
       'dis': disconnect_user_stream
       'mute': mute_messages
       'unmute': unmute_messages
-      'pulse': pulse_message
+      'pulse': send_pulse
       'snd': send_private_message
       'fwd': forward_private_message
       'arc': archive_message

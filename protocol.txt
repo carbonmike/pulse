@@ -1,0 +1,47 @@
+
+Atrium messaging/data exchange protocol
+
+
+Atrium is the stream and messaging manager for Pulse.
+
+
+Connect to Atrium and create a UserSession. 
+
+Ask Atrium for a StreamContext (requires a UserSession).
+If this is the first time you are connecting, Atrium will create a pub/sub topic for you;
+if you are an existing user, it will retrieve your topic.
+
+Send a message to your stream by calling the "push" method on your StreamContext
+
+Find a user in your Atrium by calling the "lookup_user" method and passing a name.
+This will return a UserProxy object
+
+Send (or forward) a message to that user by calling send() on your Atrium service and passing
+the message, the UserProxy, and your UserSession
+
+An Atrium instance can "peer" with other instances over the wire. To do this, first create a
+PeerContract object, then call recognize() on your instance, passing a name, the PeerContract and the name
+(or IP address) of the remote instance. (port number is optional). This will allow your instance 
+to receive traffic from the remote Atrium instance.
+
+The remote Atrium instance must recognize() your instance in order to receive traffic from you.
+
+Peering arrangements are persistent across system restarts. They can either have a timed scope, or remain active
+until you explicitly deactivate them.
+
+An Atrium instance that wants to send data to a peer must look it up in its local database using get_peer(), passing
+the peer name. If a peer has been recognized and registered under that name, Atrium will return a ServerProxy representing
+the remote system. Send a message to a user on the remote system by calling the proxy's send() method.
+Depending on the terms of the peering contract, Atrium may automatically send user stream data to the remote instance
+(for example, if remote users are allowed to connect to the streams of users on this system).
+
+An Atrium instance that wants to receive data from a remote peer has to have a valid contract with that peer. Look up the peer 
+by name using get_peer(), then pull messages from the returned ServerProxy
+
+
+
+
+
+
+
+

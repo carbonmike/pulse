@@ -2,7 +2,8 @@
 
 
 '''
-
+Usage:
+    atrium.py --config <configfile>
 '''
 
 import os, sys
@@ -13,6 +14,7 @@ from abc import ABC
 class MessagingContext(object):
     def __init__(self):
         pass
+
 
 class MessageWriter(ABC):
     def __init__(self):
@@ -40,3 +42,14 @@ class Exchange(object):
     def __init__(self, message_writer, message_collector, **kwargs):
         pass
 
+
+
+def main(args):
+    print(args)
+
+    
+
+
+if __name__ == '__main__':
+    args = docopt.docopt(__doc__)
+    main(args)
