@@ -51,8 +51,7 @@ def handle_user_offline(cmd_object, dlg_context, lexicon, service_registry, **kw
     atrium_svc = service_registry.lookup('atrium')
     
     user_sms_number = dlg_context.source_number
-    session = atrium_svc.get_user_session_sms(user_sms_number) # may return more than one?
-    atrium_svc.close_session(session)
+    atrium_svc.close_session_sms(user_sms_number) # may return more than one?
 
     return 'User offline.'
 

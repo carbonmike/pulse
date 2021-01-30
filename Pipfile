@@ -10,6 +10,8 @@ snap-micro = "*"
 sqlalchemy = "*"
 boto3 = "*"
 twilio = "*"
+uhashring = "*"
+redis = "*"
 
 [requires]
 python_version = "3.6"

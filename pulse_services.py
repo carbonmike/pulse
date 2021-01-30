@@ -252,11 +252,67 @@ class UserSession(object):
         pass
 
 
+class StreamContext(object):
+    def __init__(self):
+        pass
+
+
 class AtriumService(object):
     def __init__(self, **kwargs):
+        self.user_sms_sessions = {}
+
+
+    def is_expired(self, user_session) -> bool:
+        return False
+
+
+    def create_topic_for_user_id(self, user_id: str):
         pass
+
+
+    def get_topic_for_user_id(self, user_id: str):
+        pass
+
 
     def open_user_session_sms(self, sms_number: str, user_id: str, **kwargs) -> UserSession:
-        pass
+        
+        #db_service = kwargs.get('userdb')
+        #db_service.lookup_user_account_sms(user_id, sms_number)
+
+        session = UserSession()
+        self.user_sms_sessions[sms_number] = session
+        return session
 
 
+    def get_user_session_sms(self, sms_number: str) -> UserSession:
+        
+        session = self.user_sms_sessions.get(sms_number)
+        if not session:
+            raise Exception(f'No user session for {sms_number}')
+        
+        if self.session_is_expired(session):
+            raise Exception(f'User session for {sms_number} is expired.')
+
+        return session
+
+
+    def close_session_sms(self, sms_number: str):
+        
+        session = self.find_user_session_sms(sms_number)
+        if session:
+            self.delete_user_session_sms(session)
+        # if we can't find the session, do nothing
+    
+
+    def connect_user_stream(self, target_user_id: str, session: UserSession):
+        
+        stream_ctx = self.create_stream_context(session)
+        
+        # look up the topic for the target user ID
+        topic = self.get_topic_for_user_id(target_user_id)
+
+        # create a slot for a Kafka consumer assigned to that topic
+
+        # send the request to atriumd
+
+        # read result code and send status back to caller

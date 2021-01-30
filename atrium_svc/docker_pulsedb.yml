@@ -1,6 +1,19 @@
 version: '3'
+
+networks:
+  atrium-net:
+    driver: bridge
+
 services:
   
+  redis:
+    image: 'bitnami/redis:latest'
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    networks:
+      - default
+      - atrium-net
+
   db:
     build:
       dockerfile: pgsql.Dockerfile

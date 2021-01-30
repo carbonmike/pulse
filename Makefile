@@ -13,13 +13,18 @@ dblogin:
 	psql -U postgres -h $(container_ipaddr) -p 5433
 
 db-up:
-	docker-compose -f docker_pulsedb.yml up -d
+	docker-compose -f atrium_svc/docker_pulsedb.yml up -d
 
 db-down:
 	docker-compose -f docker_pulsedb.yml down
 
 db-bounce: db-down db-up
 
+redis-up:
+	docker-compose -f atrium_svc/docker_pulsedb.yml up -d redis
+
+redis-down:
+	docker-compose -f atrium_svc/docker_pulsedb.yml stop redis
 
 api-web-run:
 	PULSE_HOME=`pwd` PYTHONPATH=`pwd` python weblistener.py --configfile config/listen_http.yaml
