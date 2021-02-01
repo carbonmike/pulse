@@ -21,38 +21,6 @@ from uhashring import HashRing
 
 
 
-class MessagingContext(object):
-    def __init__(self):
-        pass
-
-
-class MessageWriter(ABC):
-    def __init__(self):
-        pass
-
-    
-    def write_message(self, stream_id, **kwargs):
-        pass
-
-
-class MessageCollector(ABC):
-    def __init__(self):
-        pass
-
-    def collect_messages(self, stream_id):
-        pass
-
-
-class MessageStream(object):
-    def __init_(self):
-        pass
-
-
-class Exchange(object):
-    def __init__(self, message_writer, message_collector, **kwargs):
-        pass
-
-
 class BadMessageHeaderFormat(Exception):
     def __init__(self, field_name):
         super().__init__(self, f'Atrium message header is missing required field {field_name}.')
@@ -69,12 +37,8 @@ def console_handler(message, service_registry):
 
 class MessageHandler(ABC):
     def __init__(self, channel_id:str, backchannel_id:str, timeout_seconds:int, **kwargs):
-
-        print('keyword args passed to MessageHandler constructor:')
-        print(common.jsonpretty(kwargs))
-        r = redis.StrictRedis(**kwargs)
-
-        self.redis_pubsub_interface = r.pubsub()
+        self.redis_client = redis.StrictRedis(**kwargs)
+        self.redis_pubsub_interface = self.redis_client.pubsub()
         self.redis_pubsub_interface.subscribe(channel_id)
         self.backchannel_id = backchannel_id
         self.timeout_seconds = timeout_seconds
@@ -83,16 +47,33 @@ class MessageHandler(ABC):
     def handle_message(self, message:str, backchannel_id:str):
         pass
 
+
+    def send_message(self, message_type, body_mimetype, **kwargs):
+        '''Allows a message handler to communicate with its parent atriumd process
+        by publishing to its pub/sub backchannel
+        '''
+         
+        msg_dict = {
+            'message_type': message_type,
+            'body_data_type': body_mimetype,
+            'timestamp': datetime.datetime.now().isoformat(),
+            'sender_pid': -1,
+            'body': json.dumps(kwargs)
+        }
+
+        self.redis_client.publish(self.backchannel_id, json.dumps(msg_dict))
+
     def process(self):
-        while True:
+        while True:            
             message = self.redis_pubsub_interface.get_message(timeout=self.timeout_seconds)
             if message:
-                self.handle_message(message, self.backchannel_id)
-
+                if message['type'] == 'subscribe':
+                    print('channel-subscription message detected at handler. Skipping.')
+                else:
+                    self.handle_message(message, self.backchannel_id)
 
 
 HandlerNode = namedtuple('HandlerNode', 'process_id receive_channel send_channel handler_class handler_instance')
-
 
 class Switch(object):
     def __init__(self, **kwargs):        
@@ -105,6 +86,7 @@ class Switch(object):
         }
 
         self.redis_client = redis.StrictRedis(**self.redis_params)
+        self.atrium_backchannel = kwargs['rcv_channel_id'] # for message handlers to communicate with atriumd
 
 
     def generate_channel_id(self, message_type: str)->str:
@@ -115,7 +97,7 @@ class Switch(object):
         self.target_map[msg_type] = handler_class
 
 
-    def add_dispatch_target(self, message_type: str, handler_pool_size: int, send_channel: str):
+    def add_dispatch_target(self, message_type: str, handler_pool_size: int):
         '''A dispatch target consists of 1 to N handler nodes in a consistent hash ring
         '''
 
@@ -133,7 +115,7 @@ class Switch(object):
 
             # we create P handler instances where P is the poolsize; each handler is independent 
             # and does not share data with other instances
-            handler = handler_class(rcv_channel, send_channel, 30, **self.redis_params)
+            handler = handler_class(rcv_channel, self.atrium_backchannel, 30, **self.redis_params)
 
             # spawn the message handler as a process
             p = Process(target=handler.process)
@@ -141,12 +123,13 @@ class Switch(object):
             
             node = HandlerNode(process_id=p.pid,
                                receive_channel=rcv_channel,
-                               send_channel=send_channel,
+                               send_channel=self.atrium_backchannel,
                                handler_class=handler_class,
                                handler_instance=handler)
             
-            print(f'______### adding handler node (PID {p.pid}) to dispatch target for message type "{message_type}":')
-            print(node)
+            print(f'+++ adding handler node (PID {p.pid}) to dispatch target for message type "{message_type}":')
+            print(f'+++ receive channel is {node.receive_channel}')
+            
             ring_nodes.append(node)
 
 
@@ -155,12 +138,12 @@ class Switch(object):
         # in the ring
         hash_ring = HashRing(ring_nodes)
 
-        print(f'{len(hash_ring.nodes)} handler(s) in pool for message type {message_type}.')
+        #print(f'{len(hash_ring.nodes)} handler(s) in pool for message type {message_type}.')
 
         self.dispatch_table[message_type] = hash_ring
 
 
-    def get_message_type(self, message):
+    def get_atrium_message_type(self, message):
         '''The Atrium IPC message format is:
 
             {
@@ -172,8 +155,7 @@ class Switch(object):
             }
 
         '''
-        print(message['data'])
-
+        
         msg_string = message['data'].decode('UTF-8')
         msg_object = json.loads(msg_string)
         msg_type = msg_object.get('message_type')
@@ -184,14 +166,16 @@ class Switch(object):
         return msg_type
 
 
-    def forward(self, message:str):
-        try:
-            msg_type = self.get_message_type(message)
-            print(f'### INBOUND message type [{msg_type}] detected.')
+    def forward(self, message:dict):
+        try:            
+            msg_type = self.get_atrium_message_type(message)
+            print(f'+++ INBOUND message of type [{msg_type}] detected.')
+            '''
             print('Message content:')
             print('______________________')
             print(message)
             print('______________________')
+            '''
 
             hash_ring = self.dispatch_table.get(msg_type)
             if not hash_ring:
@@ -199,7 +183,7 @@ class Switch(object):
 
             timestamp_string = datetime.datetime.now().isoformat()
             handler_node = hash_ring.get_node(hash(timestamp_string))
-            print('### Selected handler node:')
+            print('+++ Selected handler node:')
             print(handler_node)
             
             self.redis_client.publish(handler_node.receive_channel, message['data'])
@@ -210,26 +194,21 @@ class Switch(object):
 
 
 class SwitchBuilder(object):
-    def __init__(self, atrium_rcv_channel_id):
-        self._atrium_channel = atrium_rcv_channel_id
-
-    def build(self, yaml_config):
-
-        handler_module_name = yaml_config['globals']['message_handler_module']
+    
+    @staticmethod
+    def build(yaml_config):
 
         switch = Switch(**yaml_config['settings'])
+        handler_module_name = yaml_config['globals']['message_handler_module']
 
         for msg_type, handler_config in yaml_config['message_types'].items():
-
-            print(common.jsonpretty(handler_config))
-
+            
             handler_classname = handler_config['handler_class']
             handler_class = common.load_class(handler_classname, handler_module_name)
-
             switch.register_message_type(msg_type, handler_class)
             handler_pool_size = int(handler_config.get('handler_poolsize', 1))
             
-            switch.add_dispatch_target(msg_type, handler_pool_size, self._atrium_channel)
+            switch.add_dispatch_target(msg_type, handler_pool_size)
 
         return switch
 
@@ -238,12 +217,12 @@ def main(args):
 
     configfile_name = args['<configfile>']
     yaml_config = common.read_config_file(configfile_name)
+
     atrium_settings = yaml_config['settings']
-
     send_channel_id = atrium_settings['send_channel_id']
-    rcv_channel_id = atrium_settings['rcv_channel_id']
+    rcv_channel_id = atrium_settings['rcv_channel_id']   
 
-    switch = SwitchBuilder(rcv_channel_id).build(yaml_config)
+    switch = SwitchBuilder.build(yaml_config)
 
     redis_client = redis.StrictRedis(host=atrium_settings['redis_host'],
                                      port=atrium_settings['redis_port'],
@@ -258,6 +237,11 @@ def main(args):
         
         message = redis_pubsub_interface.get_message(timeout=60)
         if message:
+
+            if message['type'] == 'subscribe':
+                print(f'> subscribe-type message received in main atriumd event loop. Bypassing dispatch logic.')
+                continue
+
             print('> Message received. Invoking dispatch...')
             try:
                 switch.forward(message)

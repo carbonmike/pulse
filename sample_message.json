@@ -1,0 +1,7 @@
+{
+"message_type": "test",
+"body_data_type": "text/plain",
+"timestamp": "null",
+"sender_pid": -1,
+"body": "hello world"
+}
