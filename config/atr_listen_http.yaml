@@ -1,0 +1,72 @@
+# 
+# YAML init file for Pulse Atrium server
+#
+
+globals:
+  bind_host:                   0.0.0.0
+  port:                        5050
+  debug:                       True
+  logfile:                     pulsesvc.log
+  project_directory:           $PULSE_HOME
+  service_module:              atrium_services
+  transform_function_module:   atrium_transforms
+  decoder_module:              atrium_decode            
+
+
+service_objects:
+
+  sms:
+    class: SMSService
+    init_params:
+      - name: account_sid
+        value: $TWILIO_ACCT_SID
+
+      - name: auth_token
+        value: $TWILIO_AUTH_TOKEN
+
+      - name: service_phone_number
+        value: "9178102234"
+
+data_shapes:
+  default:
+    fields:
+
+  system_status_shape:
+    fields:
+     
+transforms:
+  ping:
+    route:              /ping
+    method:             GET
+    input_shape:        default
+    output_mimetype:    application/json
+
+  connect:
+    route:  /connect
+    method: POST
+    input_shape: default
+    output_mimetype: application/json
+
+  pulse:
+    route: /pulse
+    method: POST
+    input_shape: default
+    output_mimetype: application/json
+
+  sendmsg:
+    route: /send
+    method: POST
+    input_shape: default
+    output_mimetype: application/json
+
+  fwdmsg:
+    route: /forward
+    method: POST
+    input_shape: default
+    output_mimetype: application/json
+
+  finduser:
+    route: /user
+    method: POST
+    input_shape: default
+    output_mimetype: application/json
