@@ -9,6 +9,7 @@ Usage:
 import os, sys
 import json
 import uuid
+import datetime
 import traceback
 from collections import namedtuple
 from multiprocessing import Process
@@ -106,11 +107,15 @@ class Switch(object):
         self.redis_client = redis.StrictRedis(**self.redis_params)
 
 
+    def generate_channel_id(self, message_type: str)->str:
+        return f'{message_type}_{uuid.uuid4()}'
+
+
     def register_message_type(self, msg_type: str, handler_class: MessageHandler):
         self.target_map[msg_type] = handler_class
 
 
-    def add_dispatch_target(self, message_type: str, handler_pool_size: int, rcv_channel: str, send_channel: str):
+    def add_dispatch_target(self, message_type: str, handler_pool_size: int, send_channel: str):
         '''A dispatch target consists of 1 to N handler nodes in a consistent hash ring
         '''
 
@@ -124,6 +129,7 @@ class Switch(object):
         for i in range(handler_pool_size):
 
             nodename = f'message_type_handler_node_{i}'
+            rcv_channel = self.generate_channel_id(message_type)
 
             # we create P handler instances where P is the poolsize; each handler is independent 
             # and does not share data with other instances
@@ -139,7 +145,7 @@ class Switch(object):
                                handler_class=handler_class,
                                handler_instance=handler)
             
-            print(f'### adding handler node to dispatch target for message type "{message_type}":')
+            print(f'______### adding handler node (PID {p.pid}) to dispatch target for message type "{message_type}":')
             print(node)
             ring_nodes.append(node)
 
@@ -191,7 +197,8 @@ class Switch(object):
             if not hash_ring:
                 raise UnregisteredMessageType(msg_type)
 
-            handler_node = hash_ring.get_node(msg_type)
+            timestamp_string = datetime.datetime.now().isoformat()
+            handler_node = hash_ring.get_node(hash(timestamp_string))
             print('### Selected handler node:')
             print(handler_node)
             
@@ -205,9 +212,6 @@ class Switch(object):
 class SwitchBuilder(object):
     def __init__(self, atrium_rcv_channel_id):
         self._atrium_channel = atrium_rcv_channel_id
-
-    def generate_channel_id(self, message_type: str)->str:
-        return f'{message_type}_{uuid.uuid4()}'
 
     def build(self, yaml_config):
 
@@ -223,9 +227,9 @@ class SwitchBuilder(object):
             handler_class = common.load_class(handler_classname, handler_module_name)
 
             switch.register_message_type(msg_type, handler_class)
-            handler_pool_size = int(handler_config.get('pool_size', 1))
-            rcv_channel_id = self.generate_channel_id(msg_type)
-            switch.add_dispatch_target(msg_type, handler_pool_size, rcv_channel_id, self._atrium_channel)
+            handler_pool_size = int(handler_config.get('handler_poolsize', 1))
+            
+            switch.add_dispatch_target(msg_type, handler_pool_size, self._atrium_channel)
 
         return switch
 
