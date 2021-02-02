@@ -5,10 +5,26 @@
 globals:
   system_id: pulse
   network_id: fsny
-  service_module: pulse_sms_services
+  service_module: pulse_services
   command_handler_module: sms_handlers
 
 service_objects:
+  atrium:
+    class: AtriumClient
+    init_params:
+      - name: atrium_channel
+        value: atriumd_ipc_rcv_channel
+
+      - name: redis_host
+        value: 172.25.0.2
+
+      - name: redis_port
+        value: 6379
+      
+      - name: redis_db
+        value: 0
+
+  
   sms_twilio:
     class: SMSService
     init_params:

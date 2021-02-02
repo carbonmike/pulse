@@ -14,7 +14,7 @@ from sqlalchemy.orm.session import sessionmaker
 import datetime
 
 from snap import common
-
+import redis
 import requests
 import boto3
 import sqlalchemy as sqla
@@ -48,6 +48,33 @@ def parse_date(date_string):
                          tokens[DAY_INDEX])
 
 
+class AtriumClient(object):
+    def __init__(self, **kwargs):
+        self.atrium_channel = kwargs['atrium_channel']
+        redis_params = {
+            'host': kwargs['redis_host'],
+            'port': kwargs['redis_port'],
+            'db': kwargs['redis_db']
+        }
+        self.redis_client = redis.StrictRedis(**redis_params)
+
+
+    def current_timestamp(self):
+        return datetime.datetime.now().isoformat()
+
+
+    def connect_user_stream(self, userid, **kwargs):
+        msg_dict = {
+            "message_type": "test",
+            "body_data_type": "text/plain",
+            "timestamp": self.current_timestamp(),
+            "sender_pid": os.getpid(),
+            "body": f"connecting to user {userid}"
+        }
+
+        num_subscribers = self.redis_client.publish(self.atrium_channel, json.dumps(msg_dict))
+
+        
 
 class SMSService(object):
     def __init__(self, **kwargs):

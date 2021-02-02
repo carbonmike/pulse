@@ -23,8 +23,11 @@ settings:
 message_types:
   unknown:
     handler_class: UnknownMessageHandler
-    handler_poolsize: 3
+    handler_poolsize: 1
 
   test:
     handler_class: TestMessageHandler
-    handler_poolsize: 3
+    handler_poolsize: 1
+
+  
+    

@@ -31,10 +31,6 @@ class UnregisteredMessageType(Exception):
         super().__init__(self, f'No message of type "{msg_type}" registered with Atrium server.')
 
 
-def console_handler(message, service_registry):
-    print(f'### console handler function received message: {message}')
-
-
 class MessageHandler(ABC):
     def __init__(self, channel_id:str, backchannel_id:str, timeout_seconds:int, **kwargs):
         self.redis_client = redis.StrictRedis(**kwargs)
@@ -52,7 +48,7 @@ class MessageHandler(ABC):
         '''Allows a message handler to communicate with its parent atriumd process
         by publishing to its pub/sub backchannel
         '''
-         
+
         msg_dict = {
             'message_type': message_type,
             'body_data_type': body_mimetype,
@@ -128,7 +124,7 @@ class Switch(object):
                                handler_instance=handler)
             
             print(f'+++ adding handler node (PID {p.pid}) to dispatch target for message type "{message_type}":')
-            print(f'+++ receive channel is {node.receive_channel}')
+            print(f'+++ receive channel is {node.receive_channel}\n')
             
             ring_nodes.append(node)
 
@@ -184,7 +180,7 @@ class Switch(object):
             timestamp_string = datetime.datetime.now().isoformat()
             handler_node = hash_ring.get_node(hash(timestamp_string))
             print('+++ Selected handler node:')
-            print(handler_node)
+            print(f'{handler_node}\n')
             
             self.redis_client.publish(handler_node.receive_channel, message['data'])
 

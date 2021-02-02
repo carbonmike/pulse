@@ -17,7 +17,7 @@ import datetime
 from collections import namedtuple
 from urllib.parse import unquote_plus
 
-from pulse_sms_services import SMSService
+from pulse_services import SMSService
 
 from snap import common
 

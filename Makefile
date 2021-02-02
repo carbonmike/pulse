@@ -39,7 +39,7 @@ api-sms-regen:
 	PULSE_HOME=`pwd` routegen -e config/listen_sms.yaml > smslistener.py
 
 console-sms-test:
-	PULSE_HOME=`pwd` ./sms_console.py config/syntax_pulsesms.yaml 
+	PULSE_HOME=`pwd` ./sms_console.py config/dialog_pulsesms.yaml 
 
 qlisten-events:
 	PULSE_HOME=`pwd` PYTHONPATH=`pwd` ./sqs-consume.py --config config/pulse_sqs.yaml --source pulse_events

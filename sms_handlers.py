@@ -15,7 +15,7 @@ def handle_user_online(cmd_object: SystemCommand, dlg_context: SMSDialogContext,
     #return '\n\n placeholder for user-online handler'
     #print(cmd_object.modifiers)
 
-    if len(cmd_object.modifiers) < 2:
+    if len(cmd_object.modifiers) < 1:
         return f'Usage: {cmd_object.cmdspec.command} <username>'
         
     atrium_svc = service_registry.lookup('atrium')
@@ -64,9 +64,9 @@ def connect_user_stream(cmd_object, dlg_context, lexicon, service_registry, **kw
     atrium_svc = service_registry.lookup('atrium')
     user_sms_number = dlg_context.source_number
 
-    session = atrium_svc.get_user_session_sms(user_sms_number)
+    #session = atrium_svc.get_user_session_sms(user_sms_number)
     try:
-        atrium_svc.connect_user_stream(target_user, session)
+        atrium_svc.connect_user_stream(target_user)
 
         # under the covers, this will mean subscribing to a Kafka topic
         return f'connected to pulse stream from user {cmd_object.modifiers[0]}'
