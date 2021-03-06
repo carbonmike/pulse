@@ -1,5 +1,5 @@
 
-containerid = `docker ps | grep pulse_db | awk '{ print $$1 }'`
+containerid = `docker ps | grep atrium_svc_db | awk '{ print $$1 }'`
 container_ipaddr = `./pg_docker_ip.sh`
 
 
@@ -10,7 +10,7 @@ dockerlogin:
 	docker exec -it $(containerid) bash
 
 dblogin:
-	psql -U postgres -h $(container_ipaddr) -p 5433
+	psql -U postgres -h $(container_ipaddr) -p 5432
 
 db-up:
 	docker-compose -f atrium_svc/docker_pulsedb.yml up -d
@@ -19,6 +19,9 @@ db-down:
 	docker-compose -f docker_pulsedb.yml down
 
 db-bounce: db-down db-up
+
+db-populate:
+	psql -f sql/core_ddl.sql -U postgres -h $(container_ipaddr) -p 5432
 
 redis-up:
 	docker-compose -f atrium_svc/docker_pulsedb.yml up -d redis
@@ -46,6 +49,9 @@ qlisten-events:
 
 qlisten-data:
 	PULSE_HOME=`pwd` PYTHONPATH=`pwd` ./sqs-consume.py --config config/pulse_sqs.yaml --source pulse_data
+
+
+start-pulse: db-up
 
 
 
