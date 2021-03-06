@@ -5,6 +5,8 @@ from snap import common
 from smslang import SMSDialogContext, CommandLexicon
 from smslang import SystemCommand, GeneratorCommand, FunctionCommand
 
+SMS_CLIENT_TYPE = 'pulse_sms'
+
 
 class UserNotFound(Exception):
     def __init__(self, username):
@@ -18,10 +20,7 @@ def handle_user_online(cmd_object: SystemCommand, dlg_context: SMSDialogContext,
     if len(cmd_object.modifiers) < 1:
         return f'Usage: {cmd_object.cmdspec.command} <username>'
         
-    atrium_svc = service_registry.lookup('atrium')
-
-    username = cmd_object.modifiers[0]
-    user_sms_number = dlg_context.source_number
+    atrium_client_svc = service_registry.lookup('atrium')
 
     try:
         # sessions created in this way are not "secure" in that: 
@@ -39,7 +38,12 @@ def handle_user_online(cmd_object: SystemCommand, dlg_context: SMSDialogContext,
         # If you wish to send data to your Pulse stream and you want that data to be private,
         # you must interact with Pulse via the web interface.
         #
-        session = atrium_svc.open_user_session_sms(user_sms_number, username, hold_until_verified=False)
+
+        user_sms_number = dlg_context.source_number
+        username = atrium_client_svc.lookup_username_by_mobile_number(user_sms_number)
+        session = atrium_client_svc.open_user_session_sms(user_sms_number, username, hold_until_verified=False)
+
+
     except Exception as err:
         return f'error creating user session: {str(err)}'
 
@@ -60,16 +64,17 @@ def connect_user_stream(cmd_object, dlg_context, lexicon, service_registry, **kw
     if not len(cmd_object.modifiers):
         return f'The "{cmd_object.cmdspec.command}" command requires a <user> parameter.'
 
-    target_user = cmd_object.modifiers[0]
-    atrium_svc = service_registry.lookup('atrium')
+    target_user_id = cmd_object.modifiers[0]
+    atrium_client_svc = service_registry.lookup('atrium')
     user_sms_number = dlg_context.source_number
 
-    #session = atrium_svc.get_user_session_sms(user_sms_number)
-    try:
-        atrium_svc.connect_user_stream(target_user)
+    session = atrium_client_svc.get_user_session_sms(user_sms_number)
 
-        # under the covers, this will mean subscribing to a Kafka topic
+    try:
+        cmd_ctx = atrium_client_svc.command_context(session)
+        cmd_ctx.send('connect', session, target_user=target_user_id)
         return f'connected to pulse stream from user {cmd_object.modifiers[0]}'
+        
     except UserNotFound as err:
         return f'error connecting to user stream: {str(err)}'
 

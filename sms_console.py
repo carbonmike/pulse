@@ -3,6 +3,7 @@
 '''
 Usage:
     sms_console <configfile>
+    sms_console <configfile> --cmd <command_string>
 '''
 
 
@@ -41,13 +42,22 @@ def main(args):
     parser = sms.SMSMessageParser(command_lexicon, '-')
     engine = sms.load_dialog_engine(yaml_config, command_lexicon, registry)
 
-    while True:        
-        sms_message = input('Enter a Pulse SMS command.\n>')
-        ctx = sms.SMSDialogContext(user=None, source_number='9171234567', message=sms.unquote_plus(sms_message))
-        command = parser.parse_sms_message_body(sms_message)
+    if args['--cmd']:
+        command_str = args['<command_string>']
+        ctx = sms.SMSDialogContext(user=None, source_number='9171234567', message=sms.unquote_plus(command_str))
+        command = parser.parse_sms_message_body(command_str)
         response = engine.reply_command(command, ctx, command_lexicon, registry)
         print(f'\n{response}\n')
-    
+
+
+    else:
+        while True:        
+            sms_message = input('Enter a Pulse SMS command.\n>')
+            ctx = sms.SMSDialogContext(user=None, source_number='9171234567', message=sms.unquote_plus(sms_message))
+            command = parser.parse_sms_message_body(sms_message)
+            response = engine.reply_command(command, ctx, command_lexicon, registry)
+            print(f'\n{response}\n')
+        
 
 if __name__ == '__main__':
     args = docopt.docopt(__doc__)

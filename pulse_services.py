@@ -18,6 +18,7 @@ import redis
 import requests
 import boto3
 import sqlalchemy as sqla
+import uuid
 
 from twilio.rest import Client
 
@@ -48,6 +49,50 @@ def parse_date(date_string):
                          tokens[DAY_INDEX])
 
 
+
+class CommandContext(object):
+    def __init__(self, atrium_channel, **kwargs):
+        pass
+
+    def send(self, command_name, **kwargs):
+        '''
+        construct a message dictionary
+        set the header so that Atrium will recognize the message as a command
+        '''
+
+
+class MessageContext(object):
+    def __init__(self, atrium_channel, **kwargs):
+        self.atrium_channel = atrium_channel
+
+
+    def send(self, message_type, **kwargs):
+        msg_dict = {
+            "message_type": message_type,
+            "body_data_type": "application/json",
+            "timestamp": self.current_timestamp(),
+            "sender_pid": os.getpid(),
+            "body": kwargs
+        }
+
+        num_subscribers = self.redis_client.publish(self.atrium_channel, json.dumps(msg_dict))
+        if num_subscribers:
+            return True
+        
+        return False
+
+
+class UserSession(object):
+    def __init__(self):
+        pass
+
+
+class StreamContext(object):
+    def __init__(self):
+        pass
+
+
+
 class AtriumClient(object):
     def __init__(self, **kwargs):
         self.atrium_channel = kwargs['atrium_channel']
@@ -58,9 +103,39 @@ class AtriumClient(object):
         }
         self.redis_client = redis.StrictRedis(**redis_params)
 
+        self.user_sms_sessions = {}
+
 
     def current_timestamp(self):
         return datetime.datetime.now().isoformat()
+
+
+    def create_session(self):
+        return uuid.uuid4()
+
+
+    def command_context(self, session: UserSession):
+        # send a control signal (a command) to Atrium which will create (or look up)
+        # a command queue: generate a globally-unique session ID and pass it to Atrium,
+        # create a CommandSession object and pass the ID to it as a command channel
+        # The newly-created CommandSession will send a command on the main Atrium channel
+        # and (optionally) listen for the return on the command channel
+
+        pass
+        
+    
+    def lookup_username_by_mobile_number(self, user_sms_number: str, session, db_svc) -> str:
+        
+        User = db_svc.Base.classes.users
+        query = session.query(User).filter(User.sms_number == user_sms_number).filter(User.deleted_ts == None)
+        record = query.one()
+                    
+        return record.username
+
+
+    def message_context(self):
+        # send a data signal (a message) to Atrium
+        pass
 
 
     def connect_user_stream(self, userid, **kwargs):
@@ -74,7 +149,58 @@ class AtriumClient(object):
 
         num_subscribers = self.redis_client.publish(self.atrium_channel, json.dumps(msg_dict))
 
+    def create_topic_for_user_id(self, user_id: str):
+        pass
+
+
+    def get_topic_for_user_id(self, user_id: str):
+        pass
+
+
+    def open_user_session_sms(self, sms_number: str, user_id: str, **kwargs) -> UserSession:
         
+        #db_service = kwargs.get('userdb')
+        #db_service.lookup_user_account_sms(user_id, sms_number)
+
+        session = UserSession()
+        self.user_sms_sessions[sms_number] = session
+        return session
+
+
+    def get_user_session_sms(self, sms_number: str) -> UserSession:
+        
+        session = self.user_sms_sessions.get(sms_number)
+        if not session:
+            raise Exception(f'No user session for {sms_number}')
+        
+        #if self.session_is_expired(session):
+        #    raise Exception(f'User session for {sms_number} is expired.')
+
+        return session
+
+
+    def close_session_sms(self, sms_number: str):
+        
+        session = self.find_user_session_sms(sms_number)
+        if session:
+            self.delete_user_session_sms(session)
+        # if we can't find the session, do nothing
+    
+
+    def connect_user_stream(self, target_user_id: str, session: UserSession):
+        
+        stream_ctx = self.create_stream_context(session)
+        
+        # look up the topic for the target user ID
+        topic = self.get_topic_for_user_id(target_user_id)
+
+        # create a slot for a Kafka consumer assigned to that topic
+
+        # send the request to atriumd
+
+        # read result code and send status back to caller
+
+
 
 class SMSService(object):
     def __init__(self, **kwargs):
@@ -274,14 +400,6 @@ class APIError(Exception):
 
 APIEndpoint = namedtuple('APIEndpoint', 'host port path method')
 
-class UserSession(object):
-    def __init__(self):
-        pass
-
-
-class StreamContext(object):
-    def __init__(self):
-        pass
 
 
 class AtriumService(object):

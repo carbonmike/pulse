@@ -41,15 +41,12 @@ def main(args):
     channel_id = 'atriumd_ipc_rcv_channel'
     msg_params = args['--message-data']
 
-    
-    #print(msg_dict)
-    
+
     redis_params = {
         'host': '172.25.0.2',
         'port': 6379,
         'db': 0
     }
-
 
     redis_client = redis.StrictRedis(**redis_params)
 
