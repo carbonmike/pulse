@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os, sys
+import traceback as tb
 from snap import common
 from smslang import SMSDialogContext, CommandLexicon
 from smslang import SystemCommand, GeneratorCommand, FunctionCommand
@@ -21,6 +22,8 @@ def handle_user_online(cmd_object: SystemCommand, dlg_context: SMSDialogContext,
         return f'Usage: {cmd_object.cmdspec.command} <username>'
         
     atrium_client_svc = service_registry.lookup('atrium')
+    db_svc = service_registry.lookup('postgres')
+
 
     try:
         # sessions created in this way are not "secure" in that: 
@@ -40,12 +43,17 @@ def handle_user_online(cmd_object: SystemCommand, dlg_context: SMSDialogContext,
         #
 
         user_sms_number = dlg_context.source_number
-        username = atrium_client_svc.lookup_username_by_mobile_number(user_sms_number)
-        session = atrium_client_svc.open_user_session_sms(user_sms_number, username, hold_until_verified=False)
+        pulse_sms_session = None # TODO first see if a valid pulse sms session exists
+
+        with db_svc.txn_scope() as dbsession:    
+            username = atrium_client_svc.lookup_username_by_mobile_number(user_sms_number, dbsession, db_svc)
+            pulse_sms_session = atrium_client_svc.open_user_session_sms(user_sms_number, username, hold_until_verified=False)
 
 
     except Exception as err:
-        return f'error creating user session: {str(err)}'
+        tbstring = ''.join(tb.format_exception(None, err, err.__traceback__))
+        return f'error creating user session: {str(err)}.\nTraceback: {tbstring}'
+        
 
     return 'User online.'
 

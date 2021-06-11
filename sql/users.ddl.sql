@@ -1,0 +1,2 @@
+CREATE USER pulseuser WITH ENCRYPTED PASSWORD 'notobvious';
+CREATE DATABASE pulse OWNER pulseuser;

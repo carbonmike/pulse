@@ -20,8 +20,8 @@ db-down:
 
 db-bounce: db-down db-up
 
-db-populate:
-	psql -f sql/core_ddl.sql -U postgres -h $(container_ipaddr) -p 5432
+db-populate:	
+	psql -U pulseuser -d pulse -h $(container_ipaddr) -f sql/core_ddl.sql
 
 redis-up:
 	docker-compose -f atrium_svc/docker_pulsedb.yml up -d redis

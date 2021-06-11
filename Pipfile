@@ -12,6 +12,7 @@ boto3 = "*"
 twilio = "*"
 uhashring = "*"
 redis = "*"
+mercury-toolkit = "*"
 
 [requires]
 python_version = "3.6"

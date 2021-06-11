@@ -6,8 +6,8 @@ globals:
   debug:                       True
   logfile:                     pulsesvc.log
   project_directory:           $PULSE_HOME
-  service_module:              atrium_services
-  message_handler_module:      atrium_handlers
+  service_module:              pulse_atrium_services
+  message_handler_module:      pulse_atrium_handlers
 
 service_objects:
 

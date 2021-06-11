@@ -1,0 +1,25 @@
+globals:
+  service_module: tdx_services
+
+service_objects:
+
+  snowflake:
+    class: PostgresqlService
+    init_params:
+      - name: user
+        value: $_USERNAME
+
+      - name: password
+        value: $SNOWFLAKE_PASSWORD
+
+      - name: role
+        value: ENTAPPSDEVADMIN
+
+      - name: account
+        value: $SNOWFLAKE_ACCOUNT
+
+      - name: snowflake_db_name
+        value: $SNOWFLAKE_DATABASE
+
+      - name: snowflake_db_schema
+        value: COMMON

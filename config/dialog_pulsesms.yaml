@@ -6,9 +6,32 @@ globals:
   system_id: pulse
   network_id: fsny
   service_module: pulse_services
-  command_handler_module: sms_handlers
+  command_handler_module: pulse_sms_handlers
 
 service_objects:
+
+  postgres:
+    class: PostgreSQLService
+    init_params:
+      - name: database
+        value: pulse
+
+      - name: host
+        value: $PULSE_DB_HOST
+
+      - name: port
+        value: 5432
+
+      - name: username
+        value: $PULSE_DB_USER
+
+      - name: password
+        value: $PULSE_DB_PASSWORD
+
+      - name: schema
+        value: public
+
+
   atrium:
     class: AtriumClient
     init_params:
