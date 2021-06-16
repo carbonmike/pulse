@@ -9,18 +9,41 @@ Usage:
 
 import os, sys
 import json
-from snap import common
+from snap import snap, common
 import docopt
 
 def generate_temp_password():
     return 'ch4ng3-me-1st'
 
 
+class ObjectFactory(object):
+    @classmethod
+    def create_pulse_user(cls, db_svc, **kwargs):
+        User = db_svc.Base.classes.users
+        return User(**kwargs)
+
+
 def main(args):
+
+    configfile = args['<configfile>']
+    yaml_config = common.read_config_file(configfile)
+    service_registry = common.ServiceObjectRegistry(snap.initialize_services(yaml_config))
+
     username = args['<username>']
     email_addr = args['<email>']
     temp_password = generate_temp_password()
 
+    db_svc = service_registry.lookup('postgres')
+    with db_svc.txn_scope() as session:
+        new_user = ObjectFactory.create_pulse_user(db_svc, **{
+            'username': username,
+            'password': temp_password,
+            'email': email_addr,
+            'sms_country_code': '1',
+            'sms_phone_number': '9174176968'
+        })
+
+        session.add(new_user)
 
 
 if __name__ == '__main__':

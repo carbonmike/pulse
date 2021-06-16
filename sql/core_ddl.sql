@@ -8,6 +8,7 @@ CREATE TABLE "active_sessions" (
   PRIMARY KEY ("id")
 );
 
+
 CREATE TABLE "group_memberships" (
   "user_id" uuid NOT NULL,
   "group_id" uuid NOT NULL,
@@ -99,7 +100,10 @@ CREATE TABLE "users" (
   "username" varchar(64) NOT NULL,
   "password" varchar(255) NOT NULL,
   "email" varchar(255) NOT NULL,
+  "sms_country_code" varchar(2),
+  "sms_phone_number" varchar(16),
   "public_key_uri" text,
+  "custom_data" jsonb,
   "default_session_type_ref_id" int2,
   "storage_profile_ref_id" int2,
   "status" int2 NOT NULL,

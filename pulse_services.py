@@ -127,7 +127,7 @@ class AtriumClient(object):
     def lookup_username_by_mobile_number(self, user_sms_number: str, session, db_svc) -> str:
         
         User = db_svc.Base.classes.users
-        query = session.query(User).filter(User.sms_number == user_sms_number).filter(User.deleted_ts == None)
+        query = session.query(User).filter(User.sms_phone_number == user_sms_number).filter(User.deleted_ts == None)
         record = query.one()
                     
         return record.username

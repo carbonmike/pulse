@@ -10,7 +10,7 @@ dockerlogin:
 	docker exec -it $(containerid) bash
 
 dblogin:
-	psql -U postgres -h $(container_ipaddr) -p 5432
+	psql -w -U postgres -h $(container_ipaddr) -p 5432
 
 db-up:
 	docker-compose -f atrium_svc/docker_pulsedb.yml up -d
@@ -20,8 +20,14 @@ db-down:
 
 db-bounce: db-down db-up
 
+db-purge:
+	psql -w -d postgres -U pulseuser -h $(container_ipaddr) -f sql/purge.sql
+
+db-reset:
+	psql -W -U postgres -h $(container_ipaddr) -f sql/db_ddl.sql
+
 db-populate:	
-	psql -U pulseuser -d pulse -h $(container_ipaddr) -f sql/core_ddl.sql
+	psql -w -U pulseuser -d pulse -h $(container_ipaddr) -f sql/core_ddl.sql
 
 redis-up:
 	docker-compose -f atrium_svc/docker_pulsedb.yml up -d redis
