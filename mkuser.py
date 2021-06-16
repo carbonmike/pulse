@@ -9,6 +9,8 @@ Usage:
 
 import os, sys
 import json
+import uuid
+import datetime
 from snap import snap, common
 import docopt
 
@@ -21,6 +23,15 @@ class ObjectFactory(object):
     def create_pulse_user(cls, db_svc, **kwargs):
         User = db_svc.Base.classes.users
         return User(**kwargs)
+
+
+def generate_uuid():
+    newid = uuid.uuid4()
+    return str(newid)
+
+
+def now():
+    return datetime.datetime.now()
 
 
 def main(args):
@@ -36,11 +47,14 @@ def main(args):
     db_svc = service_registry.lookup('postgres')
     with db_svc.txn_scope() as session:
         new_user = ObjectFactory.create_pulse_user(db_svc, **{
+            'id': generate_uuid(),
             'username': username,
             'password': temp_password,
             'email': email_addr,
             'sms_country_code': '1',
-            'sms_phone_number': '9174176968'
+            'sms_phone_number': '9174176968',
+            'status': 1,
+            'created_ts': now()
         })
 
         session.add(new_user)

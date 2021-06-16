@@ -3,6 +3,7 @@
 import os, sys
 import traceback as tb
 from snap import common
+from sqlalchemy import orm
 from smslang import SMSDialogContext, CommandLexicon
 from smslang import SystemCommand, GeneratorCommand, FunctionCommand
 
@@ -23,7 +24,6 @@ def handle_user_online(cmd_object: SystemCommand, dlg_context: SMSDialogContext,
         
     atrium_client_svc = service_registry.lookup('atrium')
     db_svc = service_registry.lookup('postgres')
-
 
     try:
         # sessions created in this way are not "secure" in that: 
@@ -49,6 +49,8 @@ def handle_user_online(cmd_object: SystemCommand, dlg_context: SMSDialogContext,
             username = atrium_client_svc.lookup_username_by_mobile_number(user_sms_number, dbsession, db_svc)
             pulse_sms_session = atrium_client_svc.open_user_session_sms(user_sms_number, username, hold_until_verified=False)
 
+    except orm.exc.NoResultFound as err:
+        return f'no user registered under the SMS number of this terminal.'
 
     except Exception as err:
         tbstring = ''.join(tb.format_exception(None, err, err.__traceback__))

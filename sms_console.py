@@ -2,7 +2,7 @@
 
 '''
 Usage:
-    sms_console <configfile>
+    sms_console <configfile> --number <mobile_number>
     sms_console <configfile> --cmd <command_string>
 '''
 
@@ -32,6 +32,7 @@ def main(args):
     # atrium (message routing/control)
     #   (web-aware front end)
 
+    mobile_number = args['<mobile_number>']
     configfile = args['<configfile>']
     yaml_config = common.read_config_file(configfile)
 
@@ -44,16 +45,15 @@ def main(args):
 
     if args['--cmd']:
         command_str = args['<command_string>']
-        ctx = sms.SMSDialogContext(user=None, source_number='9171234567', message=sms.unquote_plus(command_str))
+        ctx = sms.SMSDialogContext(user=None, source_number=mobile_number, message=sms.unquote_plus(command_str))
         command = parser.parse_sms_message_body(command_str)
         response = engine.reply_command(command, ctx, command_lexicon, registry)
         print(f'\n{response}\n')
 
-
     else:
         while True:        
             sms_message = input('Enter a Pulse SMS command.\n>')
-            ctx = sms.SMSDialogContext(user=None, source_number='9171234567', message=sms.unquote_plus(sms_message))
+            ctx = sms.SMSDialogContext(user=None, source_number=mobile_number, message=sms.unquote_plus(sms_message))
             command = parser.parse_sms_message_body(sms_message)
             response = engine.reply_command(command, ctx, command_lexicon, registry)
             print(f'\n{response}\n')
